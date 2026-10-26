@@ -24,7 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
-import androidx.compose.runtime.saveable.Saver
+
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -32,24 +32,20 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DnD_sheetTheme {
+                val stateHolder = rememberSaveable(saver = CharacterStateHolderSaver) { CharacterStateHolder() }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    CharacterScreen(modifier = Modifier.padding(innerPadding))
+                    CharacterScreen(stateHolder, modifier = Modifier.padding(innerPadding))
                 }
             }
         }
     }
 }
 
-val characterSaver = Saver<CharacterAttributes, List<Int>>(
-    save = { listOf(it.strength, it.dexterity, it.constitution, it.intelligence, it.wisdom, it.charisma, it.currentHp, it.currentState.ordinal) },
-    restore = { CharacterAttributes(strength = it[0], dexterity = it[1], constitution = it[2], intelligence = it[3], wisdom = it[4], charisma = it[5], currentHp = it[6], currentState = CharState.entries[it[7]]) }
-)
 
 @Composable
-fun CharacterScreen(modifier: Modifier = Modifier) {
-    var character by rememberSaveable(stateSaver = characterSaver) { mutableStateOf(CharacterAttributes()) }
+fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modifier) {
 
-    val backgroundColor = when (character.currentState) {
+    val backgroundColor = when (stateHolder.character.currentState) {
         CharState.HEALTHY -> Color(0xFFE8F5E9)
         CharState.UNCONSCIOUS -> Color(0xFFFFF3E0)
         CharState.DEAD -> Color(0xFFEF5350)
@@ -70,7 +66,7 @@ fun CharacterScreen(modifier: Modifier = Modifier) {
                 .border(2.dp, Color.Gray, shape = RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
-            val avatarEmoji = when (character.currentState) {
+            val avatarEmoji = when (stateHolder.character.currentState) {
                 CharState.HEALTHY -> "🧙‍♂️"
                 CharState.UNCONSCIOUS -> "😵"
                 CharState.DEAD -> "💀"
@@ -80,13 +76,13 @@ fun CharacterScreen(modifier: Modifier = Modifier) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (character.currentState != CharState.HEALTHY) {
+        if (stateHolder.character.currentState != CharState.HEALTHY) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             ) {
                 Text(
-                    text = when (character.currentState) {
+                    text = when (stateHolder.character.currentState) {
                         CharState.UNCONSCIOUS -> "💀 ВЫ БЕЗ СОЗНАНИЯ!"
                         CharState.DEAD -> "☠️ ВЫ МЕРТВЫ."
                         else -> ""
@@ -106,22 +102,22 @@ fun CharacterScreen(modifier: Modifier = Modifier) {
 
             StatInputField(
                 title = "СИЛ",
-                value = character.strength.toString(),
-                onValueChange = { character = character.copy(strength = it.toIntOrNull() ?: 0) },
+                value = stateHolder.character.strength.toString(),
+                onValueChange = { stateHolder.updateStat("СИЛ", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "ЛВК",
-                value = character.dexterity.toString(),
-                onValueChange = { character = character.copy(dexterity = it.toIntOrNull() ?: 0) },
+                value = stateHolder.character.dexterity.toString(),
+                onValueChange = { stateHolder.updateStat("ЛВК", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "ТЕЛ",
-                value = character.constitution.toString(),
-                onValueChange = { character = character.copy(constitution = it.toIntOrNull() ?: 0) },
+                value = stateHolder.character.constitution.toString(),
+                onValueChange = { stateHolder.updateStat("ТЕЛ", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -131,22 +127,22 @@ fun CharacterScreen(modifier: Modifier = Modifier) {
 
             StatInputField(
                 title = "ИНТ",
-                value = character.intelligence.toString(),
-                onValueChange = { character = character.copy(intelligence = it.toIntOrNull() ?: 0) },
+                value = stateHolder.character.intelligence.toString(),
+                onValueChange = { stateHolder.updateStat("ИНТ", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "МДР",
-                value = character.wisdom.toString(),
-                onValueChange = { character = character.copy(wisdom = it.toIntOrNull() ?: 0) },
+                value = stateHolder.character.wisdom.toString(),
+                onValueChange = { stateHolder.updateStat("МДР", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "ХАР",
-                value = character.charisma.toString(),
-                onValueChange = { character = character.copy(charisma = it.toIntOrNull() ?: 0) },
+                value = stateHolder.character.charisma.toString(),
+                onValueChange = { stateHolder.updateStat("ХАР", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -159,7 +155,7 @@ fun CharacterScreen(modifier: Modifier = Modifier) {
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Хиты: ${character.currentHp} / ${character.maxHp}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("Хиты: ${stateHolder.character.currentHp} / ${stateHolder.character.maxHp}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -167,32 +163,24 @@ fun CharacterScreen(modifier: Modifier = Modifier) {
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
-            onClick = {
-                character = character.copy(currentHp = (character.currentHp - 10).coerceAtLeast(minimumValue = 0))
-                if ( (character.currentHp == 0) && (character.currentState == CharState.HEALTHY) ) {
-                    character = character.copy(currentState = CharState.UNCONSCIOUS)
-                }
-                else if ((character.currentHp == 0) && (character.currentState == CharState.UNCONSCIOUS)){
-                    character = character.copy(currentState = CharState.DEAD)
-                }
-
-            },
+            onClick = { stateHolder.takeDamage(10) }, // Это не баг, я так специально сделал. Сейчас сделал так, чтобы в конце надпись на кнопке менялась с нанести урон на добить
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-            enabled = character.currentState != CharState.DEAD
+            enabled = stateHolder.character.currentState != CharState.DEAD
         ){
-            Text("Получить урон (-10 HP)")
+            if ( (stateHolder.character.currentState != CharState.UNCONSCIOUS) && (stateHolder.character.currentState != CharState.DEAD) ){
+                Text("Получить урон (-10 HP)")
+            }
+            else{
+                Text("Добить!")
+            }
+
         }
 
         Button(
-            onClick = {
-                character = character.copy(currentHp = (character.currentHp + 5).coerceAtMost(maximumValue = character.maxHp))
-                if (character.currentState == CharState.UNCONSCIOUS){
-                    character = character.copy(currentState = CharState.HEALTHY)
-                }
-            },
+            onClick = { stateHolder.heal(5) },
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            enabled = character.currentState != CharState.DEAD
+            enabled = (stateHolder.character.currentState != CharState.DEAD) && (stateHolder.character.currentHp < stateHolder.character.maxHp)
         ){
             Text("Лечение (+5 HP)")
         }
@@ -201,7 +189,7 @@ fun CharacterScreen(modifier: Modifier = Modifier) {
 
         OutlinedButton(
             onClick = {
-                character = CharacterAttributes()
+                stateHolder.reset()
             },
             modifier = Modifier.fillMaxWidth()
         ){
@@ -239,6 +227,6 @@ fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit
 @Composable
 fun CharacterScreenPreview() {
     DnD_sheetTheme{
-        CharacterScreen()
+        CharacterScreen(stateHolder = CharacterStateHolder())
     }
 }

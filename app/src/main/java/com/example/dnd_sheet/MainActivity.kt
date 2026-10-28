@@ -34,7 +34,12 @@ class MainActivity : ComponentActivity() {
             DnD_sheetTheme {
                 val stateHolder = rememberSaveable(saver = CharacterStateHolderSaver) { CharacterStateHolder() }
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    CharacterScreen(stateHolder, modifier = Modifier.padding(innerPadding))
+                    CharacterScreen(character = stateHolder.character,
+                        takeDamage = {value -> stateHolder.takeDamage(value)},
+                        heal = {value -> stateHolder.heal(value)},
+                        updateStat = {stat, value -> stateHolder.updateStat(stat, value)},
+                        reset = {stateHolder.reset()},
+                        modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -43,9 +48,16 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modifier) {
+fun CharacterScreen(
+    character: CharacterAttributes,
+    takeDamage: (Int) -> Unit,
+    heal: (Int) -> Unit,
+    updateStat: (String, Int) -> Unit,
+    reset: () -> Unit,
+    modifier: Modifier = Modifier
+) {
 
-    val backgroundColor = when (stateHolder.character.currentState) {
+    val backgroundColor = when (character.currentState) {
         CharState.HEALTHY -> Color(0xFFE8F5E9)
         CharState.UNCONSCIOUS -> Color(0xFFFFF3E0)
         CharState.DEAD -> Color(0xFFEF5350)
@@ -66,7 +78,7 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
                 .border(2.dp, Color.Gray, shape = RoundedCornerShape(16.dp)),
             contentAlignment = Alignment.Center
         ) {
-            val avatarEmoji = when (stateHolder.character.currentState) {
+            val avatarEmoji = when (character.currentState) {
                 CharState.HEALTHY -> "🧙‍♂️"
                 CharState.UNCONSCIOUS -> "😵"
                 CharState.DEAD -> "💀"
@@ -76,13 +88,13 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        if (stateHolder.character.currentState != CharState.HEALTHY) {
+        if (character.currentState != CharState.HEALTHY) {
             Card(
                 colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.2f)),
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
             ) {
                 Text(
-                    text = when (stateHolder.character.currentState) {
+                    text = when (character.currentState) {
                         CharState.UNCONSCIOUS -> "💀 ВЫ БЕЗ СОЗНАНИЯ!"
                         CharState.DEAD -> "☠️ ВЫ МЕРТВЫ."
                         else -> ""
@@ -102,22 +114,22 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
 
             StatInputField(
                 title = "СИЛ",
-                value = stateHolder.character.strength.toString(),
-                onValueChange = { stateHolder.updateStat("СИЛ", it.toIntOrNull() ?: 0) },
+                value = character.strength.toString(),
+                onValueChange = { updateStat("СИЛ", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "ЛВК",
-                value = stateHolder.character.dexterity.toString(),
-                onValueChange = { stateHolder.updateStat("ЛВК", it.toIntOrNull() ?: 0) },
+                value = character.dexterity.toString(),
+                onValueChange = { updateStat("ЛВК", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "ТЕЛ",
-                value = stateHolder.character.constitution.toString(),
-                onValueChange = { stateHolder.updateStat("ТЕЛ", it.toIntOrNull() ?: 0) },
+                value = character.constitution.toString(),
+                onValueChange = { updateStat("ТЕЛ", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -127,22 +139,22 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
 
             StatInputField(
                 title = "ИНТ",
-                value = stateHolder.character.intelligence.toString(),
-                onValueChange = { stateHolder.updateStat("ИНТ", it.toIntOrNull() ?: 0) },
+                value = character.intelligence.toString(),
+                onValueChange = { updateStat("ИНТ", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "МДР",
-                value = stateHolder.character.wisdom.toString(),
-                onValueChange = { stateHolder.updateStat("МДР", it.toIntOrNull() ?: 0) },
+                value = character.wisdom.toString(),
+                onValueChange = { updateStat("МДР", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
 
             StatInputField(
                 title = "ХАР",
-                value = stateHolder.character.charisma.toString(),
-                onValueChange = { stateHolder.updateStat("ХАР", it.toIntOrNull() ?: 0) },
+                value = character.charisma.toString(),
+                onValueChange = { updateStat("ХАР", it.toIntOrNull() ?: 0) },
                 modifier = Modifier.weight(1f)
             )
         }
@@ -155,7 +167,7 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
             colors = CardDefaults.cardColors(containerColor = Color.White)
         ) {
             Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Хиты: ${stateHolder.character.currentHp} / ${stateHolder.character.maxHp}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("Хиты: ${character.currentHp} / ${character.maxHp}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
         }
 
@@ -163,12 +175,12 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
-            onClick = { stateHolder.takeDamage(10) }, // Это не баг, я так специально сделал. Сейчас сделал так, чтобы в конце надпись на кнопке менялась с нанести урон на добить
+            onClick = { takeDamage(10) },
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-            enabled = stateHolder.character.currentState != CharState.DEAD
+            enabled = character.currentState != CharState.DEAD
         ){
-            if ( (stateHolder.character.currentState != CharState.UNCONSCIOUS) && (stateHolder.character.currentState != CharState.DEAD) ){
+            if ( (character.currentState != CharState.UNCONSCIOUS) && (character.currentState != CharState.DEAD) ){
                 Text("Получить урон (-10 HP)")
             }
             else{
@@ -178,9 +190,9 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
         }
 
         Button(
-            onClick = { stateHolder.heal(5) },
+            onClick = { heal(5) },
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            enabled = (stateHolder.character.currentState != CharState.DEAD) && (stateHolder.character.currentHp < stateHolder.character.maxHp)
+            enabled = (character.currentState != CharState.DEAD) && (character.currentHp < character.maxHp)
         ){
             Text("Лечение (+5 HP)")
         }
@@ -189,7 +201,7 @@ fun CharacterScreen(stateHolder: CharacterStateHolder, modifier: Modifier = Modi
 
         OutlinedButton(
             onClick = {
-                stateHolder.reset()
+                reset()
             },
             modifier = Modifier.fillMaxWidth()
         ){
@@ -226,7 +238,13 @@ fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit
 @Preview(showBackground = true)
 @Composable
 fun CharacterScreenPreview() {
-    DnD_sheetTheme{
-        CharacterScreen(stateHolder = CharacterStateHolder())
+    DnD_sheetTheme {
+        CharacterScreen(
+            character = CharacterAttributes(),
+            takeDamage = {},
+            heal = {},
+            updateStat = { _, _ -> },
+            reset = {}
+        )
     }
 }

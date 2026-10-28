@@ -4,7 +4,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.Saver
 
 
 val CharacterStateHolderSaver = listSaver<CharacterStateHolder, Any>(
@@ -49,7 +48,7 @@ class CharacterStateHolder (initialCharacter: CharacterAttributes = CharacterAtt
     fun heal(amount: Int){
         if (character.currentState == CharState.DEAD) return
         character = character.copy(currentHp = (character.currentHp + amount).coerceAtMost(maximumValue = character.maxHp))
-        if (character.currentState == CharState.UNCONSCIOUS){ // Здесь проверка на количество хп не нужна, так как эта проверка физически не может запуститься, если у персонажа 0 хп (на строке выше мы повышаем здоровье)
+        if (character.currentState == CharState.UNCONSCIOUS){
             character = character.copy(currentState = CharState.HEALTHY)
         }
     }

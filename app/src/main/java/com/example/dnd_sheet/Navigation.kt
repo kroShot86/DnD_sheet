@@ -22,7 +22,7 @@ data object CharacterScreenRoute : NavKey
 data object InventoryRoute : NavKey
 
 @Composable
-fun AppNavigation(stateHolder: CharacterStateHolder, modifier: Modifier) {
+fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
     val backStack = remember { mutableStateListOf<NavKey>(MainScreenRoute) }
 
     NavDisplay(
@@ -41,11 +41,11 @@ fun AppNavigation(stateHolder: CharacterStateHolder, modifier: Modifier) {
 
             entry <CharacterScreenRoute> {
                 characterScreen(
-                    character = stateHolder.character,
-                    takeDamage = { stateHolder.takeDamage(it) },
-                    heal = { stateHolder.heal(it) },
-                    updateStat = { stat, value -> stateHolder.updateStat(stat, value) },
-                    reset = { stateHolder.reset() },
+                    character = characterViewModel.character,
+                    takeDamage = { characterViewModel.takeDamage(it) },
+                    heal = { characterViewModel.heal(it) },
+                    updateStat = { stat, value -> characterViewModel.updateStat(stat, value) },
+                    reset = { characterViewModel.reset() },
                     toInventory = { backStack.add(InventoryRoute) },
                     toBack = { backStack.removeLastOrNull() },
                     modifier = modifier

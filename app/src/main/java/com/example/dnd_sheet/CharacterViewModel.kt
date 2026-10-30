@@ -3,35 +3,12 @@ package com.example.dnd_sheet
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.saveable.listSaver
+import androidx.lifecycle.ViewModel
 
 
-val CharacterStateHolderSaver = listSaver<CharacterStateHolder, Any>(
-    save = { stateHolder ->
-        val char = stateHolder.character
-        listOf(
-            char.strength, char.dexterity, char.constitution,
-            char.intelligence, char.wisdom, char.charisma,
-            char.currentHp, char.currentState.ordinal
-        )
-    },
-    restore = { list ->
-        val char = CharacterAttributes(
-            strength = list[0] as Int,
-            dexterity = list[1] as Int,
-            constitution = list[2] as Int,
-            intelligence = list[3] as Int,
-            wisdom = list[4] as Int,
-            charisma = list[5] as Int,
-            currentHp = list[6] as Int,
-            currentState = CharState.entries[list[7] as Int]
-        )
-        CharacterStateHolder(char)
-    }
-)
 
-class CharacterStateHolder (initialCharacter: CharacterAttributes = CharacterAttributes()) {
-    var character by mutableStateOf(initialCharacter)
+class CharacterViewModel : ViewModel() {
+    var character by mutableStateOf(CharacterAttributes())
         private set
 
 
@@ -66,7 +43,7 @@ class CharacterStateHolder (initialCharacter: CharacterAttributes = CharacterAtt
     }
 
 
-    fun reset(){
+    fun reset() {
         character = CharacterAttributes()
     }
 

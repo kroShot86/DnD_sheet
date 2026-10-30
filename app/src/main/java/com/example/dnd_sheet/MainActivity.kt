@@ -10,7 +10,9 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
+
 
 
 class MainActivity : ComponentActivity() {
@@ -19,10 +21,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             DnD_sheetTheme {
-                val stateHolder = rememberSaveable(saver = CharacterStateHolderSaver) { CharacterStateHolder() }
+                val characterViewModel: CharacterViewModel = viewModel()
 
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    AppNavigation(stateHolder, Modifier.padding(innerPadding))
+                    AppNavigation(characterViewModel = characterViewModel, modifier = Modifier.padding(innerPadding))
                 }
             }
         }
@@ -30,16 +32,3 @@ class MainActivity : ComponentActivity() {
 }
 
 
-
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    DnD_sheetTheme {
-        val stateHolder = rememberSaveable(saver = CharacterStateHolderSaver) { CharacterStateHolder() }
-
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            AppNavigation(stateHolder, Modifier.padding(innerPadding))
-        }
-    }
-}

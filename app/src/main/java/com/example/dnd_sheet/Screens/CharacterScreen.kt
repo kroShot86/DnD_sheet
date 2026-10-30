@@ -40,8 +40,6 @@ import androidx.compose.ui.unit.sp
 import com.example.dnd_sheet.AppNavigation
 import com.example.dnd_sheet.CharState
 import com.example.dnd_sheet.CharacterAttributes
-import com.example.dnd_sheet.CharacterStateHolder
-import com.example.dnd_sheet.CharacterStateHolderSaver
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 
 
@@ -250,15 +248,3 @@ fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit
     }
 }
 
-
-@Preview(showBackground = true)
-@Composable
-fun MainScreenPreview() {
-    DnD_sheetTheme {
-        val stateHolder = rememberSaveable(saver = CharacterStateHolderSaver) { CharacterStateHolder() }
-
-        Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-            AppNavigation(stateHolder, Modifier.padding(innerPadding))
-        }
-    }
-}

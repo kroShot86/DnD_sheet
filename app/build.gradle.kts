@@ -59,4 +59,6 @@ dependencies {
 
     // Для сохранения состояния навигации при повороте (сериализация @Serializable)
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 }

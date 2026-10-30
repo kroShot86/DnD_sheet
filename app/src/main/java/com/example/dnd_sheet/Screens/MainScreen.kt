@@ -15,8 +15,6 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import com.example.dnd_sheet.AppNavigation
-import com.example.dnd_sheet.CharacterStateHolder
-import com.example.dnd_sheet.CharacterStateHolderSaver
 import com.example.dnd_sheet.R
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 import androidx.compose.material3.Text

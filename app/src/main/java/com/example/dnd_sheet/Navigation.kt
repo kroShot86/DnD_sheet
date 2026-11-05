@@ -8,6 +8,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
 import com.example.dnd_sheet.Screens.InventoryScreen
 import com.example.dnd_sheet.Screens.MainScreen
 import com.example.dnd_sheet.Screens.CharacterScreen
@@ -23,7 +24,7 @@ data class InventoryScreenRoute(val characterId: Long) : NavKey
 
 @Composable
 fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
-    val backStack = remember { mutableStateListOf<NavKey>(MainScreenRoute) }
+    val backStack = rememberNavBackStack(MainScreenRoute)
 
     NavDisplay(
         backStack = backStack,

@@ -15,6 +15,42 @@ class CharacterViewModel : ViewModel() {
 
     val characters: List<CharacterAttributes> get() = _characters
 
+
+    //////////////////////////////////////////////////////////////////////////////////////////////// Надо удалить
+
+    private var nextId = 1L
+
+    init {
+
+        _characters.add(CharacterAttributes(id = nextId++, nickname = "Арагорн", currentHp = 30))
+        _characters.add(CharacterAttributes(id = nextId++, nickname = "Леголас", currentHp = 12))
+        _characters.add(CharacterAttributes(id = nextId++, nickname = "Гэндальф", currentHp = 0, currentState = CharState.UNCONSCIOUS))
+        _characters.add(CharacterAttributes(id = nextId++, nickname = "Боромир", currentHp = 0, currentState = CharState.DEAD))
+
+
+        repeat(10) { index ->
+            _characters.add(
+                CharacterAttributes(
+                    id = nextId++,
+                    nickname = "Инкогнито ${index + 1}",
+                    characterClass = listOf("Воин", "Чародей", "Колдун", "Волшебник", "Варвар", "Паладин", "Изобретатель", "Следопыт", "Бард", "Плут", "Жрец").random(),
+                    strength = (8..18).random(),
+                    dexterity = (8..18).random(),
+                    constitution = (8..18).random(),
+                    intelligence = (8..18).random(),
+                    wisdom = (8..18).random(),
+                    charisma = (8..18).random(),
+                    level = (1..20).random()
+                )
+            )
+        }
+
+
+    }
+
+
+    ////////////////////////////////////////////////////////////////////////////////////////////////
+
     fun getCharacter(id: Long): CharacterAttributes? {
         return _characters.find { it.id == id }
     }
@@ -90,8 +126,8 @@ class CharacterViewModel : ViewModel() {
     }
 
     fun updateExp(id: Long, newExp: Int) {
-        val char = getCharacter(id) ?: return
-        updateCharacter(id, char.copy(exp = newExp))
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(exp = newExp))
         updateLevel(id)
     }
 

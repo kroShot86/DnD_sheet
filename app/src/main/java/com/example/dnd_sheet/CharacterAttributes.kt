@@ -1,8 +1,14 @@
 package com.example.dnd_sheet
 
+
 enum class CharState { HEALTHY, UNCONSCIOUS, DEAD }
 
 data class CharacterAttributes(
+
+    val id: Long = System.currentTimeMillis(),
+
+    val nickname: String = "",
+
     val strength: Int = 10,
     val dexterity: Int = 10,
     val constitution: Int = 10,
@@ -11,8 +17,17 @@ data class CharacterAttributes(
     val charisma: Int = 10,
 
     val currentHp: Int = 10 + (constitution * 2),
-    val currentState: CharState = CharState.HEALTHY
+
+    val currentState: CharState = CharState.HEALTHY,
+
+    val inventory: List<Items> = emptyList()
 ){
+
+
     val maxHp: Int
         get() = 10 + (constitution * 2)
+
+    val totalWeight: Float
+        get() = inventory.sumOf { it.totalWeight.toDouble() }.toFloat()
+
 }

@@ -16,10 +16,10 @@ import com.example.dnd_sheet.Screens.characterScreen
 data object MainScreenRoute : NavKey
 
 @Serializable
-data object CharacterScreenRoute : NavKey
+data class CharacterScreenRoute(val characterId: Long) : NavKey
 
 @Serializable
-data object InventoryRoute : NavKey
+data class InventoryScreenRoute(val characterId: Long) : NavKey
 
 @Composable
 fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
@@ -28,34 +28,46 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
-
         entryProvider = entryProvider {
 
             entry<MainScreenRoute> {
                 MainScreen(
-                    toCharacterScreen = { backStack.add(CharacterScreenRoute) },
-                    toBack = { backStack.removeLastOrNull() },
+                    characters = characterViewModel.characters,
+                    onAddCharacter = { characterViewModel.addCharacter() },
+                    onCharacterClick = { id -> backStack.add(CharacterScreenRoute(id)) },
+                    onRemoveCharacter = { id -> characterViewModel.removeCharacter(id) },
                     modifier = modifier
                 )
             }
 
-            entry <CharacterScreenRoute> {
-                characterScreen(
-                    character = characterViewModel.character,
-                    takeDamage = { characterViewModel.takeDamage(it) },
-                    heal = { characterViewModel.heal(it) },
-                    updateStat = { stat, value -> characterViewModel.updateStat(stat, value) },
-                    reset = { characterViewModel.reset() },
-                    toInventory = { backStack.add(InventoryRoute) },
-                    toBack = { backStack.removeLastOrNull() },
-                    modifier = modifier
-                )
+            entry<CharacterScreenRoute> { route ->
+                val character = characterViewModel.getCharacter(route.characterId)
+                if (character != null) {
+                    characterScreen(
+                        character = character,
+                        takeDamage = { characterViewModel.takeDamage(route.characterId, it) },
+                        heal = { characterViewModel.heal(route.characterId, it) },
+                        updateStat = { stat, value -> characterViewModel.updateStat(route.characterId, stat, value) },
+                        reset = { characterViewModel.reset(route.characterId) },
+                        toInventory = {id -> backStack.add(InventoryScreenRoute(id)) },
+                        toBack = { backStack.removeLastOrNull() },
+                        modifier = modifier
+                    )
+                }
             }
 
-            entry<InventoryRoute> {
-                Inventory(toBack = { backStack.removeLastOrNull() },
-                    modifier = modifier
-                )
+            entry<InventoryScreenRoute> { route ->
+                val character = characterViewModel.getCharacter(route.characterId)
+                if (character != null){
+                    Inventory(
+                        character = character,
+                        items = character.inventory,
+                        addItem = { item -> characterViewModel.addItem(route.characterId, item) },
+                        removeItem = { itemId -> characterViewModel.removeItem(route.characterId, itemId) },
+                        toBack = { backStack.removeLastOrNull() },
+                        modifier = modifier
+                    )
+                }
 
             }
         }

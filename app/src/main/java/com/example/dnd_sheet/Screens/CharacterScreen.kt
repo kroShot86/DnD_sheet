@@ -2,7 +2,6 @@ package com.example.dnd_sheet.Screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.anchoredDraggable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -24,10 +23,8 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -37,7 +34,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.dnd_sheet.AppNavigation
 import com.example.dnd_sheet.CharState
 import com.example.dnd_sheet.CharacterAttributes
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
@@ -50,7 +46,7 @@ fun characterScreen(
     heal: (Int) -> Unit,
     updateStat: (String, Int) -> Unit,
     reset: () -> Unit,
-    toInventory: () -> Unit,
+    toInventory: (Long) -> Unit,
     toBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -196,7 +192,7 @@ fun characterScreen(
         }
 
         Button(
-            onClick = toInventory,
+            onClick = { toInventory(character.id) },
             modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
             colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
         ) {
@@ -248,3 +244,20 @@ fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit
     }
 }
 
+
+@Preview(showBackground = true, name = "Лист персонажа")
+@Composable
+fun PreviewCharacterScreen() {
+    DnD_sheetTheme {
+        characterScreen(
+            character = CharacterAttributes(),
+            takeDamage = {},
+            heal = {},
+            updateStat = { _, _ -> },
+            reset = {  },
+            toInventory = {},
+            toBack = {},
+            modifier = Modifier
+        )
+    }
+}

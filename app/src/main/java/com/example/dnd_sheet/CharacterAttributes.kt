@@ -7,7 +7,10 @@ data class CharacterAttributes(
 
     val id: Long = System.currentTimeMillis(),
 
-    val nickname: String = "",
+    val nickname: String = "Инкогнито",
+    val characterClass: String = "",
+    val level: Int = 1,
+    val exp: Int = 0,
 
     val strength: Int = 10,
     val dexterity: Int = 10,

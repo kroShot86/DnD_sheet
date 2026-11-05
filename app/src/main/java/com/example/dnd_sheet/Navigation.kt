@@ -35,8 +35,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                     characters = characterViewModel.characters,
                     onAddCharacter = { characterViewModel.addCharacter() },
                     onCharacterClick = { id -> backStack.add(CharacterScreenRoute(id)) },
-                    onRemoveCharacter = { id -> characterViewModel.removeCharacter(id) },
-                    modifier = modifier
+                    onRemoveCharacter = { id -> characterViewModel.removeCharacter(id) }
                 )
             }
 
@@ -48,6 +47,9 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         takeDamage = { characterViewModel.takeDamage(route.characterId, it) },
                         heal = { characterViewModel.heal(route.characterId, it) },
                         updateStat = { stat, value -> characterViewModel.updateStat(route.characterId, stat, value) },
+                        updateExp = { newExp -> characterViewModel.updateExp(route.characterId, newExp) },
+                        updateClass = { newClass -> characterViewModel.updateClass(route.characterId, newClass) },
+                        updateNickname = { newNickname -> characterViewModel.updateNickname(route.characterId, newNickname) },
                         reset = { characterViewModel.reset(route.characterId) },
                         toInventory = {id -> backStack.add(InventoryScreenRoute(id)) },
                         toBack = { backStack.removeLastOrNull() },
@@ -63,8 +65,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         character = character,
                         addItem = { item -> characterViewModel.addItem(route.characterId, item) },
                         removeItem = { itemId -> characterViewModel.removeItem(route.characterId, itemId) },
-                        toBack = { backStack.removeLastOrNull() },
-                        modifier = modifier
+                        toBack = { backStack.removeLastOrNull() }
                     )
                 }
 

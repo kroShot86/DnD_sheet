@@ -4,14 +4,20 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -42,11 +48,18 @@ fun CharacterScreen(
     takeDamage: (Int) -> Unit,
     heal: (Int) -> Unit,
     updateStat: (String, Int) -> Unit,
+    updateExp: (Int) -> Unit,
+    updateClass: (String) -> Unit,
+    updateNickname: (String) -> Unit,
     reset: () -> Unit,
     toInventory: (Long) -> Unit,
     toBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+    var expText by remember(character.exp) { mutableStateOf(character.exp.toString()) }
+    var classText by remember(character.characterClass) { mutableStateOf(character.characterClass) }
+    var nameText by remember(character.nickname) { mutableStateOf(character.nickname) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -55,8 +68,6 @@ fun CharacterScreen(
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
-
-
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -77,6 +88,7 @@ fun CharacterScreen(
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+
             Box(
                 modifier = Modifier
                     .size(130.dp)
@@ -93,16 +105,104 @@ fun CharacterScreen(
                 Text(text = avatarEmoji, fontSize = 72.sp)
             }
 
-            Text(
-                text = character.nickname.ifEmpty { "Безымянный" },
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
-                modifier = Modifier.padding(top = 12.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable {  },
+                contentAlignment = Alignment.Center
+            ) {
+                BasicTextField(
+                    value = nameText,
+                    onValueChange = { newNickname ->
+                        nameText = newNickname
+                        updateNickname(newNickname)
+                    },
+                    textStyle = MaterialTheme.typography.headlineMedium.copy(
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        textAlign = TextAlign.Center
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    decorationBox = { innerTextField ->
+                        if (nameText.isEmpty()) {
+                            Text(
+                                text = "Инкогнито",
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.Gray,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                        innerTextField()
+                    }
+                )
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkGlass),
+                border = BorderStroke(1.dp, GoldGlow.copy(alpha = 0.3f))
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(16.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Класс", fontSize = 12.sp, color = Color.Gray)
+                        OutlinedTextField(
+                            value = classText,
+                            onValueChange = {
+                                classText = it
+                                updateClass(it)
+                            },
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            )
+                        )
+                    }
+
+                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(horizontal = 16.dp)) {
+                        Text("Уровень", fontSize = 12.sp, color = Color.Gray)
+                        Text("${character.level}", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = GoldGlow)
+                    }
+
+
+                    Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
+                        Text("Опыт", fontSize = 12.sp, color = Color.Gray)
+                        OutlinedTextField(
+                            value = expText,
+                            onValueChange = { newValue ->
+                                if (newValue.all { it.isDigit() } && newValue.length <= 7) {
+                                    expText = newValue
+                                    updateExp(newValue.toIntOrNull() ?: 0)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = NeonBlue, textAlign = TextAlign.End),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true,
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = Color.Transparent,
+                                unfocusedBorderColor = Color.Transparent,
+                                focusedContainerColor = Color.Transparent,
+                                unfocusedContainerColor = Color.Transparent
+                            )
+                        )
+                    }
+                }
+            }
 
             if (character.currentState != CharState.HEALTHY) {
                 Card(
@@ -124,27 +224,25 @@ fun CharacterScreen(
                 }
             }
 
-
             Text(
                 "Характеристики",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.Bold,
-                color = NeonBlue, // Светящийся текст
+                color = NeonBlue,
                 modifier = Modifier.align(Alignment.Start)
             )
             Spacer(modifier = Modifier.height(8.dp))
 
-
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                StatInputField("СИЛ", character.strength.toString(), { updateStat("СИЛ", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
-                StatInputField("ЛВК", character.dexterity.toString(), { updateStat("ЛВК", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
-                StatInputField("ТЕЛ", character.constitution.toString(), { updateStat("ТЕЛ", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+                StatInputField("СИЛ", character.strength, { updateStat("СИЛ", it) }, Modifier.weight(1f))
+                StatInputField("ЛВК", character.dexterity, { updateStat("ЛВК", it) }, Modifier.weight(1f))
+                StatInputField("ТЕЛ", character.constitution, { updateStat("ТЕЛ", it) }, Modifier.weight(1f))
             }
             Spacer(modifier = Modifier.height(8.dp))
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                StatInputField("ИНТ", character.intelligence.toString(), { updateStat("ИНТ", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
-                StatInputField("МДР", character.wisdom.toString(), { updateStat("МДР", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
-                StatInputField("ХАР", character.charisma.toString(), { updateStat("ХАР", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+                StatInputField("ИНТ", character.intelligence, { updateStat("ИНТ", it) }, Modifier.weight(1f))
+                StatInputField("МДР", character.wisdom, { updateStat("МДР", it) }, Modifier.weight(1f))
+                StatInputField("ХАР", character.charisma, { updateStat("ХАР", it) }, Modifier.weight(1f))
             }
 
             Spacer(modifier = Modifier.height(16.dp))
@@ -153,7 +251,7 @@ fun CharacterScreen(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = DarkGlass),
-                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)) // Легкая рамка
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f))
             ) {
                 Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                     Text("Здоровье", fontSize = 14.sp, color = Color.Gray)
@@ -171,10 +269,8 @@ fun CharacterScreen(
                 }
             }
 
-
             Text("Действия", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeonBlue, modifier = Modifier.align(Alignment.Start))
             Spacer(modifier = Modifier.height(8.dp))
-
 
             Button(
                 onClick = { takeDamage(10) },
@@ -186,7 +282,6 @@ fun CharacterScreen(
                 Text(if (character.currentState == CharState.UNCONSCIOUS) "💀 Добить!" else "⚔️ Получить урон (-10 HP)", fontSize = 16.sp, color = Color.White)
             }
 
-
             Button(
                 onClick = { heal(5) },
                 modifier = Modifier.fillMaxWidth().height(50.dp).padding(bottom = 8.dp),
@@ -196,7 +291,6 @@ fun CharacterScreen(
             ) {
                 Text("💚 Лечение (+5 HP)", fontSize = 16.sp, color = Color.Black)
             }
-
 
             Button(
                 onClick = { toInventory(character.id) },
@@ -209,7 +303,6 @@ fun CharacterScreen(
             }
 
             Spacer(modifier = Modifier.height(16.dp))
-
 
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(
@@ -234,7 +327,15 @@ fun CharacterScreen(
 }
 
 @Composable
-fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
+fun StatInputField(
+    title: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+
+    var textValue by remember(value) { mutableStateOf(value.toString()) }
+
     Card(
         modifier = modifier,
         shape = RoundedCornerShape(12.dp),
@@ -244,10 +345,11 @@ fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit
         Column(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
             Text(title, style = MaterialTheme.typography.labelSmall, color = NeonBlue, fontWeight = FontWeight.Bold)
             OutlinedTextField(
-                value = value,
+                value = textValue,
                 onValueChange = { newValue ->
                     if (newValue.all { it.isDigit() } && newValue.length <= 2) {
-                        onValueChange(newValue)
+                        textValue = newValue
+                        newValue.toIntOrNull()?.let { onValueChange(it) }
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -270,10 +372,13 @@ fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit
 fun PreviewCharacterScreen() {
     DnD_sheetTheme {
         CharacterScreen(
-            character = CharacterAttributes(nickname = "Арагорн", currentHp = 25),
+            character = CharacterAttributes(nickname = "Арагорн", characterClass = "Следопыт", currentHp = 25, exp = 5000, level = 4),
             takeDamage = {},
             heal = {},
             updateStat = { _, _ -> },
+            updateExp = {},
+            updateClass = {},
+            updateNickname = { _ -> },
             reset = {},
             toInventory = {},
             toBack = {},

@@ -37,15 +37,16 @@ fun InventoryScreen(
     addItem: (item: Items) -> Unit,
     removeItem: (itemId: Long) -> Unit,
     toBack: () -> Unit,
-    modifier: Modifier = Modifier
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+    Box {
         Image(
             painter = painterResource(R.drawable.back_inventory_screen),
             contentDescription = "Инвентарь",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
+
+
 
         Box(
             modifier = Modifier
@@ -60,7 +61,7 @@ fun InventoryScreen(
                 )
         )
 
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp).padding(top = 30.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -195,8 +196,7 @@ fun PreviewInventoryScreen() {
             ),
             addItem = {},
             removeItem = {},
-            toBack = {},
-            modifier = Modifier
+            toBack = {}
         )
     }
 }

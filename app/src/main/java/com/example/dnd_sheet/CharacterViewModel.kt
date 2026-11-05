@@ -60,6 +60,53 @@ class CharacterViewModel : ViewModel() {
 
     }
 
+    fun updateLevel(id: Long){
+        val character = getCharacter(id) ?: return
+
+        val newCharacter = character.copy(level = when (character.exp) {
+            in 0..299 -> 1
+            in 300..899 -> 2
+            in 900..2699 -> 3
+            in 2700..6499 -> 4
+            in 6500..13999 -> 5
+            in 14000..22999 -> 6
+            in 23000..33999 -> 7
+            in 34000..47999 -> 8
+            in 48000..63999 -> 9
+            in 64000..84999 -> 10
+            in 85000..99999 -> 11
+            in 100000..119999 -> 12
+            in 120000..139999 -> 13
+            in 140000..164999 -> 14
+            in 165000..194999 -> 15
+            in 195000..224999 -> 16
+            in 225000..264999 -> 17
+            in 265000..304999 -> 18
+            in 305000..354999 -> 19
+            else -> 20
+        })
+
+        updateCharacter(id, newCharacter)
+    }
+
+    fun updateExp(id: Long, newExp: Int) {
+        val char = getCharacter(id) ?: return
+        updateCharacter(id, char.copy(exp = newExp))
+        updateLevel(id)
+    }
+
+    fun updateClass(id: Long, newClass: String) {
+        val character = getCharacter(id) ?: return
+
+        updateCharacter(id, character.copy(characterClass = newClass))
+    }
+
+    fun updateNickname(id: Long, newNickname: String) {
+        val character = getCharacter(id) ?: return
+
+        updateCharacter(id, character.copy(nickname = newNickname))
+    }
+
     fun updateStat(id: Long, attributeName: String, value: Int) {
         val character = getCharacter(id) ?: return
 

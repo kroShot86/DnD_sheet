@@ -1,23 +1,31 @@
 package com.example.dnd_sheet.Screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,9 +47,12 @@ fun MainScreen(
     onCharacterClick: (Long) -> Unit,
     onAddCharacter: () -> Unit,
     onRemoveCharacter: (Long) -> Unit,
-    modifier: Modifier
+
 ) {
-    Box(modifier = modifier.fillMaxSize()) {
+
+    var characterToDelete by remember { mutableStateOf<CharacterAttributes?>(null) }
+
+    Box {
         Image(
             painter = painterResource(R.drawable.back_main_screen),
             contentDescription = "Фон",
@@ -66,7 +77,8 @@ fun MainScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(16.dp)
+                .padding(top = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
@@ -106,11 +118,60 @@ fun MainScreen(
                     CharacterCard(
                         character = character,
                         onClick = { onCharacterClick(character.id) },
-                        onRemove = { onRemoveCharacter(character.id) }
+                        onRemove = { characterToDelete = character }
                     )
                 }
             }
         }
+    }
+    if (characterToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { characterToDelete = null },
+            containerColor = Color(0xE6151010),
+            shape = RoundedCornerShape(20.dp),
+            title = {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(text = "⚠️", fontSize = 24.sp)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        text = "Удалить героя?",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 22.sp
+                    )
+                }
+            },
+            text = {
+                Text(
+                    text = "Вы уверены, что хотите навсегда удалить ${characterToDelete?.nickname}? Это действие нельзя отменить.",
+                    color = Color.LightGray,
+                    fontSize = 16.sp
+                )
+            },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        characterToDelete?.let { onRemoveCharacter(it.id) }
+                        characterToDelete = null
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = DragonFire),
+                    shape = RoundedCornerShape(12.dp),
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                ) {
+                    Text("Удалить", fontWeight = FontWeight.Bold, color = Color.White)
+                }
+            },
+            dismissButton = {
+                OutlinedButton(
+                    onClick = { characterToDelete = null },
+                    border = BorderStroke(1.dp, Color.Gray),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
+                ) {
+                    Text("Отмена")
+                }
+            }
+        )
     }
 }
 
@@ -131,6 +192,7 @@ fun CharacterCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
+
         colors = CardDefaults.cardColors(
             containerColor = GlassDark
         ),
@@ -143,7 +205,9 @@ fun CharacterCard(
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .height(IntrinsicSize.Min)
+                .height(IntrinsicSize.Min),
+            verticalAlignment = Alignment.CenterVertically
+
         ) {
             Box(
                 modifier = Modifier
@@ -170,12 +234,12 @@ fun CharacterCard(
 
             Column(
                 modifier = Modifier
-                    .weight(1f)
+                    .weight(4f)
                     .padding(vertical = 16.dp),
                 verticalArrangement = Arrangement.Center
             ) {
                 Text(
-                    text = character.nickname.ifEmpty { "Безымянный герой" },
+                    text = character.nickname.ifEmpty { "Инкогнито" },
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White,
@@ -193,12 +257,21 @@ fun CharacterCard(
                 }
             }
 
+            Text(
+                text = "Уровень: ${character.level}",
+                fontSize = 15.sp,
+                color = Color.White,
+                textAlign = TextAlign.Center,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(3f)
+            )
 
             IconButton(
                 onClick = onRemove,
                 modifier = Modifier.padding(end = 8.dp)
             ) {
-                Text(text = "🗑️", fontSize = 20.sp)
+                Text(text = "❌", fontSize = 20.sp)
             }
         }
     }
@@ -210,15 +283,14 @@ fun PreviewMainScreen() {
     DnD_sheetTheme {
         MainScreen(
             characters = listOf(
-                CharacterAttributes(id = 1, nickname = "Арагорн", currentHp = 45),
+                CharacterAttributes(id = 1, nickname = "Арагорн", currentHp = 30),
                 CharacterAttributes(id = 2, nickname = "Леголас", currentHp = 12),
                 CharacterAttributes(id = 3, nickname = "Гэндальф", currentHp = 0, currentState = CharState.UNCONSCIOUS),
                 CharacterAttributes(id = 4, nickname = "Боромир", currentHp = 0, currentState = CharState.DEAD),
             ),
             onAddCharacter = {},
             onCharacterClick = {},
-            onRemoveCharacter = {},
-            modifier = Modifier
+            onRemoveCharacter = {}
         )
     }
 }

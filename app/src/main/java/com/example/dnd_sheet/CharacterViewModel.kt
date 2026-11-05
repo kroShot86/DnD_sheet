@@ -79,7 +79,10 @@ class CharacterViewModel : ViewModel() {
     fun reset(id: Long) {
         val character = getCharacter(id) ?: return
 
-        val newCharacter = CharacterAttributes()
+        val newCharacter = character.copy(
+            currentHp = character.maxHp,
+            currentState = CharState.HEALTHY
+        )
         updateCharacter(id, newCharacter)
     }
 

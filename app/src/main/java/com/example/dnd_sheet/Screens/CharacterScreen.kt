@@ -1,33 +1,24 @@
 package com.example.dnd_sheet.Screens
 
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
@@ -36,11 +27,17 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dnd_sheet.CharState
 import com.example.dnd_sheet.CharacterAttributes
+import com.example.dnd_sheet.R
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 
 
+val DarkGlass = Color(0xCC101820)
+val NeonBlue = Color(0xFF00E5FF)
+val DangerRed = Color(0xFFFF5252)
+val HealGreen = Color(0xFF69F0AE)
+
 @Composable
-fun characterScreen(
+fun CharacterScreen(
     character: CharacterAttributes,
     takeDamage: (Int) -> Unit,
     heal: (Int) -> Unit,
@@ -51,170 +48,187 @@ fun characterScreen(
     modifier: Modifier = Modifier
 ) {
 
-    val backgroundColor = when (character.currentState) {
-        CharState.HEALTHY -> Color(0xFFE8F5E9)
-        CharState.UNCONSCIOUS -> Color(0xFFFFF3E0)
-        CharState.DEAD -> Color(0xFFEF5350)
-    }
+    Box(modifier = Modifier.fillMaxSize()) {
+        Image(
+            painter = painterResource(R.drawable.back_character_screen),
+            contentDescription = "Лист персонажа",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
 
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .background(backgroundColor)
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
+
         Box(
             modifier = Modifier
-                .size(120.dp)
-                .background(Color.LightGray, shape = RoundedCornerShape(16.dp))
-                .border(2.dp, Color.Gray, shape = RoundedCornerShape(16.dp)),
-            contentAlignment = Alignment.Center
-        ) {
-            val avatarEmoji = when (character.currentState) {
-                CharState.HEALTHY -> "🧙‍♂️"
-                CharState.UNCONSCIOUS -> "😵"
-                CharState.DEAD -> "💀"
-            }
-            Text(text = avatarEmoji, fontSize = 64.sp)
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (character.currentState != CharState.HEALTHY) {
-            Card(
-                colors = CardDefaults.cardColors(containerColor = Color.Red.copy(alpha = 0.2f)),
-                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp)
-            ) {
-                Text(
-                    text = when (character.currentState) {
-                        CharState.UNCONSCIOUS -> "💀 ВЫ БЕЗ СОЗНАНИЯ!"
-                        CharState.DEAD -> "☠️ ВЫ МЕРТВЫ."
-                        else -> ""
-                    },
-                    color = Color.Black,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(16.dp),
-                    textAlign = TextAlign.Center
+                .fillMaxSize()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color.Black.copy(alpha = 0.4f),
+                            Color.Black.copy(alpha = 0.8f)
+                        )
+                    )
                 )
-            }
-        }
+        )
 
-        Text("Характеристики", fontSize = 18.sp, fontWeight = FontWeight.Bold, modifier = Modifier.align(Alignment.Start))
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-
-            StatInputField(
-                title = "СИЛ",
-                value = character.strength.toString(),
-                onValueChange = { updateStat("СИЛ", it.toIntOrNull() ?: 0) },
-                modifier = Modifier.weight(1f)
-            )
-
-            StatInputField(
-                title = "ЛВК",
-                value = character.dexterity.toString(),
-                onValueChange = { updateStat("ЛВК", it.toIntOrNull() ?: 0) },
-                modifier = Modifier.weight(1f)
-            )
-
-            StatInputField(
-                title = "ТЕЛ",
-                value = character.constitution.toString(),
-                onValueChange = { updateStat("ТЕЛ", it.toIntOrNull() ?: 0) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()){
-
-            StatInputField(
-                title = "ИНТ",
-                value = character.intelligence.toString(),
-                onValueChange = { updateStat("ИНТ", it.toIntOrNull() ?: 0) },
-                modifier = Modifier.weight(1f)
-            )
-
-            StatInputField(
-                title = "МДР",
-                value = character.wisdom.toString(),
-                onValueChange = { updateStat("МДР", it.toIntOrNull() ?: 0) },
-                modifier = Modifier.weight(1f)
-            )
-
-            StatInputField(
-                title = "ХАР",
-                value = character.charisma.toString(),
-                onValueChange = { updateStat("ХАР", it.toIntOrNull() ?: 0) },
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Card(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
-            shape = RoundedCornerShape(16.dp),
-            colors = CardDefaults.cardColors(containerColor = Color.White)
+        Column(
+            modifier = modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-                Text("Хиты: ${character.currentHp} / ${character.maxHp}", fontSize = 24.sp, fontWeight = FontWeight.Bold)
-            }
-        }
-
-        Text("Действия:", fontSize = 18.sp, modifier = Modifier.align(Alignment.Start))
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Button(
-            onClick = { takeDamage(10) },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFD32F2F)),
-            enabled = character.currentState != CharState.DEAD
-        ){
-            if ( (character.currentState != CharState.UNCONSCIOUS) && (character.currentState != CharState.DEAD) ){
-                Text("Получить урон (-10 HP)")
-            }
-            else{
-                Text("Добить!")
+            Box(
+                modifier = Modifier
+                    .size(130.dp)
+                    .clip(CircleShape)
+                    .background(DarkGlass)
+                    .border(3.dp, NeonBlue, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                val avatarEmoji = when (character.currentState) {
+                    CharState.HEALTHY -> "🧙‍♂️"
+                    CharState.UNCONSCIOUS -> "😵"
+                    CharState.DEAD -> "💀"
+                }
+                Text(text = avatarEmoji, fontSize = 72.sp)
             }
 
-        }
+            Text(
+                text = character.nickname.ifEmpty { "Безымянный" },
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White,
+                modifier = Modifier.padding(top = 12.dp)
+            )
 
-        Button(
-            onClick = { heal(5) },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            enabled = (character.currentState != CharState.DEAD) && (character.currentHp < character.maxHp)
-        ){
-            Text("Лечение (+5 HP)")
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        Button(
-            onClick = { toInventory(character.id) },
-            modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2196F3))
-        ) {
-            Text("Открыть Инвентарь")
-        }
 
-        Spacer(modifier = Modifier.height(16.dp))
+            if (character.currentState != CharState.HEALTHY) {
+                Card(
+                    colors = CardDefaults.cardColors(containerColor = DangerRed.copy(alpha = 0.8f)),
+                    modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text(
+                        text = when (character.currentState) {
+                            CharState.UNCONSCIOUS -> "💀 ВЫ БЕЗ СОЗНАНИЯ!"
+                            CharState.DEAD -> "☠️ ВЫ МЕРТВЫ."
+                            else -> ""
+                        },
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(16.dp),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
 
-        OutlinedButton(
-            onClick = {
-                reset()
-            },
-            modifier = Modifier.fillMaxWidth()
-        ){
-            Text("Сбросить всё")
-        }
 
-        Button(
-            onClick = { toBack() },
-            modifier = Modifier.fillMaxWidth()
-        ) {
-           Text("К списку персонажей")
+            Text(
+                "Характеристики",
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = NeonBlue, // Светящийся текст
+                modifier = Modifier.align(Alignment.Start)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                StatInputField("СИЛ", character.strength.toString(), { updateStat("СИЛ", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+                StatInputField("ЛВК", character.dexterity.toString(), { updateStat("ЛВК", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+                StatInputField("ТЕЛ", character.constitution.toString(), { updateStat("ТЕЛ", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                StatInputField("ИНТ", character.intelligence.toString(), { updateStat("ИНТ", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+                StatInputField("МДР", character.wisdom.toString(), { updateStat("МДР", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+                StatInputField("ХАР", character.charisma.toString(), { updateStat("ХАР", it.toIntOrNull() ?: 0) }, Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkGlass),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.2f)) // Легкая рамка
+            ) {
+                Column(modifier = Modifier.padding(16.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text("Здоровье", fontSize = 14.sp, color = Color.Gray)
+                    Text("${character.currentHp} / ${character.maxHp}", fontSize = 32.sp, fontWeight = FontWeight.Bold, color = Color.White)
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    val hpFraction = character.currentHp.toFloat() / character.maxHp.toFloat()
+                    LinearProgressIndicator(
+                        progress = { hpFraction },
+                        modifier = Modifier.fillMaxWidth().height(12.dp).clip(RoundedCornerShape(6.dp)),
+                        color = if (hpFraction > 0.3f) NeonBlue else DangerRed,
+                        trackColor = Color.DarkGray
+                    )
+                }
+            }
+
+
+            Text("Действия", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeonBlue, modifier = Modifier.align(Alignment.Start))
+            Spacer(modifier = Modifier.height(8.dp))
+
+
+            Button(
+                onClick = { takeDamage(10) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).padding(bottom = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = DangerRed.copy(alpha = 0.8f)),
+                enabled = character.currentState != CharState.DEAD,
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(if (character.currentState == CharState.UNCONSCIOUS) "💀 Добить!" else "⚔️ Получить урон (-10 HP)", fontSize = 16.sp, color = Color.White)
+            }
+
+
+            Button(
+                onClick = { heal(5) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).padding(bottom = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = HealGreen.copy(alpha = 0.8f)),
+                enabled = (character.currentState != CharState.DEAD) && (character.currentHp < character.maxHp),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("💚 Лечение (+5 HP)", fontSize = 16.sp, color = Color.Black)
+            }
+
+
+            Button(
+                onClick = { toInventory(character.id) },
+                modifier = Modifier.fillMaxWidth().height(50.dp).padding(bottom = 8.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = NeonBlue.copy(alpha = 0.2f)),
+                border = BorderStroke(1.dp, NeonBlue),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("🎒 Открыть Инвентарь", fontSize = 16.sp, color = NeonBlue)
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(
+                    onClick = { reset() },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color.Gray)
+                ) {
+                    Text("🔄 Сброс", color = Color.LightGray)
+                }
+                OutlinedButton(
+                    onClick = { toBack() },
+                    modifier = Modifier.weight(1f).height(50.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    border = BorderStroke(1.dp, Color.Gray)
+                ) {
+                    Text("↩️ Назад", color = Color.LightGray)
+                }
+            }
         }
     }
 }
@@ -223,11 +237,12 @@ fun characterScreen(
 fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit, modifier: Modifier = Modifier) {
     Card(
         modifier = modifier,
-        shape = RoundedCornerShape(8.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFFE0E0E0))
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C252E)),
+        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Text(title, style = MaterialTheme.typography.labelSmall, color = Color.DarkGray)
+            Text(title, style = MaterialTheme.typography.labelSmall, color = NeonBlue, fontWeight = FontWeight.Bold)
             OutlinedTextField(
                 value = value,
                 onValueChange = { newValue ->
@@ -236,25 +251,30 @@ fun StatInputField(title: String, value: String, onValueChange: (String) -> Unit
                     }
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                textStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, textAlign = TextAlign.Center),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
+                textStyle = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, color = Color.White),
+                modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Color.Transparent,
+                    unfocusedBorderColor = Color.Transparent,
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent
+                )
             )
         }
     }
 }
 
-
 @Preview(showBackground = true, name = "Лист персонажа")
 @Composable
 fun PreviewCharacterScreen() {
     DnD_sheetTheme {
-        characterScreen(
-            character = CharacterAttributes(),
+        CharacterScreen(
+            character = CharacterAttributes(nickname = "Арагорн", currentHp = 25),
             takeDamage = {},
             heal = {},
             updateStat = { _, _ -> },
-            reset = {  },
+            reset = {},
             toInventory = {},
             toBack = {},
             modifier = Modifier

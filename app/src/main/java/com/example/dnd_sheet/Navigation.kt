@@ -8,9 +8,9 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import androidx.navigation3.runtime.entryProvider
-import com.example.dnd_sheet.Screens.Inventory
+import com.example.dnd_sheet.Screens.InventoryScreen
 import com.example.dnd_sheet.Screens.MainScreen
-import com.example.dnd_sheet.Screens.characterScreen
+import com.example.dnd_sheet.Screens.CharacterScreen
 
 @Serializable
 data object MainScreenRoute : NavKey
@@ -43,7 +43,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
             entry<CharacterScreenRoute> { route ->
                 val character = characterViewModel.getCharacter(route.characterId)
                 if (character != null) {
-                    characterScreen(
+                    CharacterScreen(
                         character = character,
                         takeDamage = { characterViewModel.takeDamage(route.characterId, it) },
                         heal = { characterViewModel.heal(route.characterId, it) },
@@ -59,7 +59,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
             entry<InventoryScreenRoute> { route ->
                 val character = characterViewModel.getCharacter(route.characterId)
                 if (character != null){
-                    Inventory(
+                    InventoryScreen(
                         character = character,
                         addItem = { item -> characterViewModel.addItem(route.characterId, item) },
                         removeItem = { itemId -> characterViewModel.removeItem(route.characterId, itemId) },

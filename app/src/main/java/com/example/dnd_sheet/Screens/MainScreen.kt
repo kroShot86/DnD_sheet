@@ -257,15 +257,35 @@ fun CharacterCard(
                 }
             }
 
-            Text(
-                text = "Уровень: ${character.level}",
-                fontSize = 15.sp,
-                color = Color.White,
-                textAlign = TextAlign.Center,
-                maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(3f)
-            )
+
+            Column(
+                modifier = Modifier
+                    .weight(4f)
+                    .padding(vertical = 16.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Уровень: ${character.level}",
+                    fontSize = 15.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(3f)
+                )
+
+                Text(
+                    text = "Класс: ${character.characterClass}",
+                    fontSize = 15.sp,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                    modifier = Modifier.weight(3f)
+                )
+            }
+
+
 
             IconButton(
                 onClick = onRemove,

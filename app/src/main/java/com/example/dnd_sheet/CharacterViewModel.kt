@@ -28,11 +28,11 @@ class CharacterViewModel : ViewModel() {
         _characters.add(CharacterAttributes(id = nextId++, nickname = "Боромир", currentHp = 0, currentState = CharState.DEAD))
 
 
-        repeat(10) { index ->
+        repeat(10) {
             _characters.add(
                 CharacterAttributes(
                     id = nextId++,
-                    nickname = "Инкогнито ${index + 1}",
+                    nickname = "Инкогнито",
                     characterClass = listOf("Воин", "Чародей", "Колдун", "Волшебник", "Варвар", "Паладин", "Изобретатель", "Следопыт", "Бард", "Плут", "Жрец").random(),
                     strength = (8..18).random(),
                     dexterity = (8..18).random(),

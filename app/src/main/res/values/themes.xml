@@ -1,5 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-
     <style name="Theme.DnD_sheet" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.DnD_sheet.Starting" parent="Theme.SplashScreen">
+
+        <item name="windowSplashScreenBackground">#1A1A24</item>
+
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+
+        <item name="postSplashScreenTheme">@style/Theme.DnD_sheet</item>
+
+    </style>
+
 </resources>
+

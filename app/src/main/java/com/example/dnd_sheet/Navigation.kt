@@ -61,7 +61,6 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                 if (character != null){
                     Inventory(
                         character = character,
-                        items = character.inventory,
                         addItem = { item -> characterViewModel.addItem(route.characterId, item) },
                         removeItem = { itemId -> characterViewModel.removeItem(route.characterId, itemId) },
                         toBack = { backStack.removeLastOrNull() },

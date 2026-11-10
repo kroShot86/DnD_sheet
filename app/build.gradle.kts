@@ -65,4 +65,10 @@ dependencies {
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.7")
 
     implementation("androidx.core:core-splashscreen:1.2.0")
+
+    implementation("io.coil-kt:coil-compose:2.7.0")
+
+    implementation("com.vanniktech:android-image-cropper:4.6.0")
+
+    implementation("androidx.datastore:datastore-preferences:1.1.1")
 }

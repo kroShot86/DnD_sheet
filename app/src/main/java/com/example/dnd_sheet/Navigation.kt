@@ -51,6 +51,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         updateExp = { newExp -> characterViewModel.updateExp(route.characterId, newExp) },
                         updateClass = { newClass -> characterViewModel.updateClass(route.characterId, newClass) },
                         updateNickname = { newNickname -> characterViewModel.updateNickname(route.characterId, newNickname) },
+                        updateAvatar = { uri -> characterViewModel.updateAvatar(route.characterId, uri) },
                         reset = { characterViewModel.reset(route.characterId) },
                         toInventory = {id -> backStack.add(InventoryScreenRoute(id)) },
                         toBack = { backStack.removeLastOrNull() },

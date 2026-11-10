@@ -5,53 +5,59 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.launch
 
 
-
-class CharacterViewModel : ViewModel() {
+class CharacterViewModel(private val repository: CharacterRepository) : ViewModel() {
 
     ///////////////////////////////////////////////////////////////////////////Персонаж
     private val _characters = mutableStateListOf<CharacterAttributes>()
 
-    /*
 
-    //////////////////////////////////////////////////////////////////////////////////////////////// Добавление стартовых персонажей
 
-    private var nextId = 1L
+    //private var nextId = 1L
 
     init {
-
-        _characters.add(CharacterAttributes(id = nextId++, nickname = "Арагорн", currentHp = 30))
-        _characters.add(CharacterAttributes(id = nextId++, nickname = "Леголас", currentHp = 12))
-        _characters.add(CharacterAttributes(id = nextId++, nickname = "Гэндальф", currentHp = 0, currentState = CharState.UNCONSCIOUS))
-        _characters.add(CharacterAttributes(id = nextId++, nickname = "Боромир", currentHp = 0, currentState = CharState.DEAD))
-
-
-        repeat(10) {
-            _characters.add(
-                CharacterAttributes(
-                    id = nextId++,
-                    nickname = "Инкогнито",
-                    characterClass = listOf("Воин", "Чародей", "Колдун", "Волшебник", "Варвар", "Паладин", "Изобретатель", "Следопыт", "Бард", "Плут", "Жрец").random(),
-                    strength = (8..18).random(),
-                    dexterity = (8..18).random(),
-                    constitution = (8..18).random(),
-                    intelligence = (8..18).random(),
-                    wisdom = (8..18).random(),
-                    charisma = (8..18).random(),
-                    level = (1..20).random()
-                )
-            )
+        viewModelScope.launch {
+            val saved = repository.loadCharacters()
+            if (saved.isNotEmpty()) {
+                _characters.addAll(saved)
+            }
         }
 
+        /*
+        // Добавление стартовых персонажей
+            _characters.add(CharacterAttributes(id = nextId++, nickname = "Арагорн", currentHp = 30))
+            _characters.add(CharacterAttributes(id = nextId++, nickname = "Леголас", currentHp = 12))
+            _characters.add(CharacterAttributes(id = nextId++, nickname = "Гэндальф", currentHp = 0, currentState = CharState.UNCONSCIOUS))
+            _characters.add(CharacterAttributes(id = nextId++, nickname = "Боромир", currentHp = 0, currentState = CharState.DEAD))
 
+
+            repeat(10) {
+                _characters.add(
+                    CharacterAttributes(
+                        id = nextId++,
+                        nickname = "Инкогнито",
+                        characterClass = listOf("Воин", "Чародей", "Колдун", "Волшебник", "Варвар", "Паладин", "Изобретатель", "Следопыт", "Бард", "Плут", "Жрец").random(),
+                        strength = (8..18).random(),
+                        dexterity = (8..18).random(),
+                        constitution = (8..18).random(),
+                        intelligence = (8..18).random(),
+                        wisdom = (8..18).random(),
+                        charisma = (8..18).random(),
+                        level = (1..20).random()
+                    )
+                )
+            }
+         */
     }
 
-
-    ////////////////////////////////////////////////////////////////////////////////////////////////
-
-
-     */
+    private fun saveToDisk() {
+        viewModelScope.launch {
+            repository.saveCharacters(_characters)
+        }
+    }
 
     fun getListCharacters(): List<CharacterAttributes>{
         return _characters
@@ -64,10 +70,13 @@ class CharacterViewModel : ViewModel() {
         _characters.add(
             CharacterAttributes()
         )
+        saveToDisk()
     }
 
     fun removeCharacter(id: Long){
         _characters.removeAll {it.id == id}
+
+        saveToDisk()
     }
 
     fun updateCharacter(id: Long, newCharacter: CharacterAttributes){
@@ -75,6 +84,8 @@ class CharacterViewModel : ViewModel() {
         if (index != -1) {
             _characters[index] = newCharacter
         }
+
+        saveToDisk()
     }
 
     fun takeDamage(id: Long, amount: Int){
@@ -89,6 +100,8 @@ class CharacterViewModel : ViewModel() {
         }
 
         updateCharacter(id, character.copy(currentHp = newHp, currentState = newState))
+
+        saveToDisk()
     }
 
     fun heal(id: Long, amount: Int){
@@ -98,6 +111,8 @@ class CharacterViewModel : ViewModel() {
         val newHp = (character.currentHp + amount).coerceAtMost(maximumValue = character.maxHp)
 
         updateCharacter(id, character.copy(currentHp = newHp, currentState = CharState.HEALTHY))
+
+        saveToDisk()
 
     }
 
@@ -128,24 +143,32 @@ class CharacterViewModel : ViewModel() {
         })
 
         updateCharacter(id, newCharacter)
+
+        saveToDisk()
     }
 
     fun updateExp(id: Long, newExp: Int) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(exp = newExp))
         updateLevel(id)
+
+        saveToDisk()
     }
 
     fun updateClass(id: Long, newClass: String) {
         val character = getCharacter(id) ?: return
 
         updateCharacter(id, character.copy(characterClass = newClass))
+
+        saveToDisk()
     }
 
     fun updateNickname(id: Long, newNickname: String) {
         val character = getCharacter(id) ?: return
 
         updateCharacter(id, character.copy(nickname = newNickname))
+
+        saveToDisk()
     }
 
     fun updateStat(id: Long, attributeName: String, value: Int) {
@@ -161,8 +184,16 @@ class CharacterViewModel : ViewModel() {
             else -> character
         }
         updateCharacter(id, newCharacter)
+
+        saveToDisk()
     }
 
+    fun updateAvatar(id: Long, newUri: String?) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(avatarUri = newUri))
+
+        saveToDisk()
+    }
 
     fun reset(id: Long) {
         val character = getCharacter(id) ?: return
@@ -172,6 +203,8 @@ class CharacterViewModel : ViewModel() {
             currentState = CharState.HEALTHY
         )
         updateCharacter(id, newCharacter)
+
+        saveToDisk()
     }
 
     ////////////////////////////////////////////////////////////////////////////////Инвентарь
@@ -180,12 +213,16 @@ class CharacterViewModel : ViewModel() {
         val character = getCharacter(id) ?: return
         val newInventory = character.inventory + item
         updateCharacter(id, character.copy(inventory = newInventory))
+
+        saveToDisk()
     }
 
     fun removeItem(id: Long, itemId: Long){
         val character = getCharacter(id) ?: return
         val newInventory = character.inventory.filterNot { it.id == itemId }
         updateCharacter(id, character.copy(inventory = newInventory))
+
+        saveToDisk()
     }
 
 }

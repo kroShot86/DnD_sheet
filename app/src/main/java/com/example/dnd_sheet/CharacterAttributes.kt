@@ -1,11 +1,13 @@
 package com.example.dnd_sheet
 
+import kotlinx.serialization.Serializable
 
+@Serializable
 enum class CharState { HEALTHY, UNCONSCIOUS, DEAD }
-
+@Serializable
 data class CharacterAttributes(
 
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = java.util.UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE,
 
     val nickname: String = "Инкогнито",
     val characterClass: String = "",
@@ -23,7 +25,9 @@ data class CharacterAttributes(
 
     val currentState: CharState = CharState.HEALTHY,
 
-    val inventory: List<Items> = emptyList()
+    val inventory: List<Items> = emptyList(),
+
+    val avatarUri: String? = null
 ){
 
 

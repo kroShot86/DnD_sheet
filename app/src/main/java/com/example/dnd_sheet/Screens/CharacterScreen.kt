@@ -1,5 +1,8 @@
 package com.example.dnd_sheet.Screens
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -24,6 +27,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -34,8 +38,15 @@ import androidx.compose.ui.unit.sp
 import com.example.dnd_sheet.CharState
 import com.example.dnd_sheet.CharacterAttributes
 import com.example.dnd_sheet.R
+import com.example.dnd_sheet.saveImage
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
-
+import java.io.File
+import coil.compose.AsyncImage
+import com.canhub.cropper.CropImageOptions
+import com.canhub.cropper.CropImageView
+import com.canhub.cropper.CropImageContract
+import com.canhub.cropper.CropImageContractOptions
+import com.example.dnd_sheet.deleteImageFile
 
 val DarkGlass = Color(0xCC101820)
 val NeonBlue = Color(0xFF00E5FF)
@@ -51,11 +62,54 @@ fun CharacterScreen(
     updateExp: (Int) -> Unit,
     updateClass: (String) -> Unit,
     updateNickname: (String) -> Unit,
+    updateAvatar: (String?) -> Unit,
     reset: () -> Unit,
     toInventory: (Long) -> Unit,
     toBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+
+
+    val context = LocalContext.current
+
+    val cropLauncher = rememberLauncherForActivityResult(
+        contract = CropImageContract()
+    ) { result ->
+        if (result.isSuccessful) {
+            result.uriContent?.let { croppedUri ->
+                deleteImageFile(character.avatarUri)
+
+                val savedPath = saveImage(context, croppedUri)
+                if (savedPath != null) {
+                    updateAvatar(savedPath)
+                }
+            }
+        } else {
+            result.error?.printStackTrace()
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            cropLauncher.launch(
+                CropImageContractOptions(
+                    uri = it,
+                    cropImageOptions = CropImageOptions(
+                        guidelines = CropImageView.Guidelines.ON,
+                        aspectRatioX = 1,
+                        aspectRatioY = 1,
+                        fixAspectRatio = true,
+                        cropShape = CropImageView.CropShape.OVAL,
+                        activityTitle = "Обрезка аватара",
+                        cropMenuCropButtonTitle = "Готово"
+                    )
+                )
+            )
+        }
+    }
+
 
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -91,15 +145,25 @@ fun CharacterScreen(
                     .size(130.dp)
                     .clip(CircleShape)
                     .background(DarkGlass)
-                    .border(3.dp, NeonBlue, CircleShape),
+                    .border(3.dp, NeonBlue, CircleShape)
+                    .clickable { galleryLauncher.launch("image/*") },
                 contentAlignment = Alignment.Center
             ) {
-                val avatarEmoji = when (character.currentState) {
-                    CharState.HEALTHY -> "🧙‍♂️"
-                    CharState.UNCONSCIOUS -> "😵"
-                    CharState.DEAD -> "💀"
+                if (character.avatarUri != null) {
+                    AsyncImage(
+                        model = File(character.avatarUri),
+                        contentDescription = "Аватар",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    val avatarEmoji = when (character.currentState) {
+                        CharState.HEALTHY -> "🧙‍♂️"
+                        CharState.UNCONSCIOUS -> "😵"
+                        CharState.DEAD -> "💀"
+                    }
+                    Text(text = avatarEmoji, fontSize = 72.sp)
                 }
-                Text(text = avatarEmoji, fontSize = 72.sp)
             }
 
             Box(
@@ -156,14 +220,19 @@ fun CharacterScreen(
                             onValueChange = {
                                 updateClass(it)
                             },
-                            textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
+                            textStyle = MaterialTheme.typography.bodyLarge.copy(
+                                color = NeonBlue,
+                                fontWeight = FontWeight.Bold
+                            ),
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = Color.Transparent,
                                 unfocusedBorderColor = Color.Transparent,
                                 focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent
+                                unfocusedContainerColor = Color.Transparent,
+                                cursorColor = NeonBlue,
+
                             )
                         )
                     }
@@ -194,7 +263,8 @@ fun CharacterScreen(
                                 focusedBorderColor = Color.Transparent,
                                 unfocusedBorderColor = Color.Transparent,
                                 focusedContainerColor = Color.Transparent,
-                                unfocusedContainerColor = Color.Transparent
+                                unfocusedContainerColor = Color.Transparent,
+                                cursorColor = NeonBlue
                             )
                         )
                     }
@@ -323,6 +393,7 @@ fun CharacterScreen(
     }
 }
 
+
 @Composable
 fun StatInputField(
     title: String,
@@ -376,6 +447,7 @@ fun PreviewCharacterScreen() {
             updateExp = {},
             updateClass = {},
             updateNickname = { _ -> },
+            updateAvatar = { },
             reset = {},
             toInventory = {},
             toBack = {},

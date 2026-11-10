@@ -30,10 +30,12 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil.compose.AsyncImage
 import com.example.dnd_sheet.CharState
 import com.example.dnd_sheet.CharacterAttributes
 import com.example.dnd_sheet.R
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
+import java.io.File
 
 
 val GlassDark = Color(0xCC1A1A24)
@@ -82,8 +84,8 @@ fun MainScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Персонажи",
-                color = Color.White,
+                text = "|| Персонажи ||",
+                color = GoldGlow,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 4.sp,
@@ -224,12 +226,21 @@ fun CharacterCard(
                     .background(Color.Black.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                val emoji = when (character.currentState) {
-                    CharState.HEALTHY -> "🧙‍♂️"
-                    CharState.UNCONSCIOUS -> "😵"
-                    CharState.DEAD -> "💀"
+                if (character.avatarUri != null) {
+                    AsyncImage(
+                        model = File(character.avatarUri),
+                        contentDescription = "Аватар",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    val avatarEmoji = when (character.currentState) {
+                        CharState.HEALTHY -> "🧙‍♂️"
+                        CharState.UNCONSCIOUS -> "😵"
+                        CharState.DEAD -> "💀"
+                    }
+                    Text(text = avatarEmoji, fontSize = 28.sp)
                 }
-                Text(text = emoji, fontSize = 28.sp)
             }
 
             Column(

@@ -13,9 +13,9 @@
         android:theme="@style/Theme.DnD_sheet">
         <activity
             android:name=".MainActivity"
+            android:theme="@style/Theme.DnD_sheet.Starting"
             android:exported="true"
             android:label="@string/app_name"
-            android:theme="@style/Theme.DnD_sheet"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

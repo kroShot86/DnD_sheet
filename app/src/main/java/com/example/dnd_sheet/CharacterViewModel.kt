@@ -209,6 +209,13 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
     ////////////////////////////////////////////////////////////////////////////////Инвентарь
 
+    fun filterItems(id: Long, type: Type) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(typeItems = type))
+
+        //То, что тут нет сэйва это не баг
+    }
+
     fun addItem(id: Long, item: Items){
         val character = getCharacter(id) ?: return
         val newInventory = character.inventory + item

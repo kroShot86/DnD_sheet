@@ -3,7 +3,7 @@ package com.example.dnd_sheet
 import kotlinx.serialization.Serializable
 
 @Serializable
-enum class Type { ARMOR, WEAPON, AMMUNITION, POTION,  INGREDIENTS, OTHER }
+enum class Type { ARMORS, WEAPONS, CONSUMABLES, MAGIC_ITEMS, OTHER, ALL}
 @Serializable
 data class Items(
 

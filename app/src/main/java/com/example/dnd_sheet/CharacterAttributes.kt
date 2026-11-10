@@ -25,7 +25,10 @@ data class CharacterAttributes(
 
     val currentState: CharState = CharState.HEALTHY,
 
+
     val inventory: List<Items> = emptyList(),
+    val typeItems: Type = Type.ALL,
+
 
     val avatarUri: String? = null
 ){

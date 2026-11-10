@@ -67,6 +67,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         character = character,
                         addItem = { item -> characterViewModel.addItem(route.characterId, item) },
                         removeItem = { itemId -> characterViewModel.removeItem(route.characterId, itemId) },
+                        filterItems = { typeItems -> characterViewModel.filterItems(route.characterId, typeItems)},
                         toBack = { backStack.removeLastOrNull() }
                     )
                 }

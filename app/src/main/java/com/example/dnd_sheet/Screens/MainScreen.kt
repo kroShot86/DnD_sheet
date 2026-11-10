@@ -4,10 +4,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -29,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.dnd_sheet.CharState
@@ -194,11 +197,8 @@ fun CharacterCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-
-        colors = CardDefaults.cardColors(
-            containerColor = GlassDark
-        ),
-        border = androidx.compose.foundation.BorderStroke(
+        colors = CardDefaults.cardColors(containerColor = GlassDark),
+        border = BorderStroke(
             width = 1.dp,
             color = stateColor.copy(alpha = 0.5f)
         ),
@@ -209,7 +209,6 @@ fun CharacterCard(
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
-
         ) {
             Box(
                 modifier = Modifier
@@ -220,7 +219,7 @@ fun CharacterCard(
 
             Box(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(10.dp)
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.5f)),
@@ -245,58 +244,87 @@ fun CharacterCard(
 
             Column(
                 modifier = Modifier
-                    .weight(4f)
-                    .padding(vertical = 16.dp),
+                    .weight(1f)
+                    .padding(top = 16.dp, bottom = 16.dp, end = 8.dp),
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = character.nickname.ifEmpty { "Инкогнито" },
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = character.nickname.ifEmpty { "Без имени" },
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GoldGlow,
+                        maxLines = 1
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = "❤️ ${character.currentHp}/${character.maxHp}",
-                        fontSize = 14.sp,
-                        color = Color.LightGray
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = character.characterClass.ifEmpty { "(без класса)" },
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFC4A96E),
+                            maxLines = 1
+                        )
+                    }
                 }
             }
 
-
             Column(
                 modifier = Modifier
-                    .weight(4f)
-                    .padding(vertical = 16.dp),
+                    .weight(1f)
+                    .padding(top = 16.dp, bottom = 16.dp, end = 8.dp),
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = "Уровень: ${character.level}",
-                    fontSize = 15.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(3f)
-                )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Уровень: ", fontSize = 14.sp, color = Color(0xFFA68A4D))
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = character.level.toString(),
+                            fontSize = 14.sp,
+                            color = Color(0xFFFFD54F),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
 
-                Text(
-                    text = "Класс: ${character.characterClass}",
-                    fontSize = 15.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(3f)
-                )
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text(
+                        text = "\uD83D\uDC9B ${character.currentHp}/${character.maxHp}",
+                        fontSize = 14.sp,
+                        color = Color(0xFFFFD54F),
+                        maxLines = 1
+                    )
+                }
             }
-
-
 
             IconButton(
                 onClick = onRemove,

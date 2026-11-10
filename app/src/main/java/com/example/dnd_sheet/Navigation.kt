@@ -33,7 +33,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
 
             entry<MainScreenRoute> {
                 MainScreen(
-                    characters = characterViewModel.characters,
+                    characters = characterViewModel.getListCharacters(),
                     onAddCharacter = { characterViewModel.addCharacter() },
                     onCharacterClick = { id -> backStack.add(CharacterScreenRoute(id)) },
                     onRemoveCharacter = { id -> characterViewModel.removeCharacter(id) }

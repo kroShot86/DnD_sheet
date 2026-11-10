@@ -1,12 +1,11 @@
 package com.example.dnd_sheet
 
-import androidx.compose.ui.text.font.FontWeight
 
 enum class Type { ARMOR, WEAPON, AMMUNITION, POTION,  INGREDIENTS, OTHER }
 
 data class Items(
 
-    val id: Long = System.currentTimeMillis(),
+    val id: Long = java.util.UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE,
 
     val name: String = "",
     val weight: Float = 0.0F,

@@ -57,9 +57,6 @@ fun CharacterScreen(
     modifier: Modifier = Modifier
 ) {
 
-    var expText by remember(character.exp) { mutableStateOf(character.exp.toString()) }
-    var classText by remember(character.characterClass) { mutableStateOf(character.characterClass) }
-    var nameText by remember(character.nickname) { mutableStateOf(character.nickname) }
 
     Box(modifier = Modifier.fillMaxSize()) {
         Image(
@@ -112,9 +109,8 @@ fun CharacterScreen(
                 contentAlignment = Alignment.Center
             ) {
                 BasicTextField(
-                    value = nameText,
+                    value = character.nickname,
                     onValueChange = { newNickname ->
-                        nameText = newNickname
                         updateNickname(newNickname)
                     },
                     textStyle = MaterialTheme.typography.headlineMedium.copy(
@@ -125,7 +121,7 @@ fun CharacterScreen(
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     decorationBox = { innerTextField ->
-                        if (nameText.isEmpty()) {
+                        if (character.nickname.isEmpty()) {
                             Text(
                                 text = "Инкогнито",
                                 fontSize = 28.sp,
@@ -156,9 +152,8 @@ fun CharacterScreen(
                     Column(modifier = Modifier.weight(1f)) {
                         Text("Класс", fontSize = 12.sp, color = Color.Gray)
                         OutlinedTextField(
-                            value = classText,
+                            value = character.characterClass,
                             onValueChange = {
-                                classText = it
                                 updateClass(it)
                             },
                             textStyle = MaterialTheme.typography.bodyLarge.copy(color = Color.White),
@@ -182,10 +177,12 @@ fun CharacterScreen(
                     Column(modifier = Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                         Text("Опыт", fontSize = 12.sp, color = Color.Gray)
                         OutlinedTextField(
-                            value = expText,
+                            value = when {
+                                character.exp > 0 -> character.exp.toString()
+                                else -> ""
+                            },
                             onValueChange = { newValue ->
-                                if (newValue.all { it.isDigit() } && newValue.length <= 7) {
-                                    expText = newValue
+                                if (newValue.all { it.isDigit() } && newValue.length <= 9) {
                                     updateExp(newValue.toIntOrNull() ?: 0)
                                 }
                             },

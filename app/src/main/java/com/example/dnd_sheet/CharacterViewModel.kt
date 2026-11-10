@@ -13,10 +13,9 @@ class CharacterViewModel : ViewModel() {
     ///////////////////////////////////////////////////////////////////////////Персонаж
     private val _characters = mutableStateListOf<CharacterAttributes>()
 
-    val characters: List<CharacterAttributes> get() = _characters
+    /*
 
-
-    //////////////////////////////////////////////////////////////////////////////////////////////// Надо удалить
+    //////////////////////////////////////////////////////////////////////////////////////////////// Добавление стартовых персонажей
 
     private var nextId = 1L
 
@@ -51,6 +50,12 @@ class CharacterViewModel : ViewModel() {
 
     ////////////////////////////////////////////////////////////////////////////////////////////////
 
+
+     */
+
+    fun getListCharacters(): List<CharacterAttributes>{
+        return _characters
+    }
     fun getCharacter(id: Long): CharacterAttributes? {
         return _characters.find { it.id == id }
     }

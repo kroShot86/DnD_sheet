@@ -36,3 +36,11 @@ fun deleteImageFile(path: String?) {
         e.printStackTrace()
     }
 }
+
+fun formatWeight(weight: Float): String {
+    return if (weight % 1.0f == 0.0f) {
+        weight.toInt().toString()
+    } else {
+        String.format(java.util.Locale.US, "%.1f", weight)
+    }
+}

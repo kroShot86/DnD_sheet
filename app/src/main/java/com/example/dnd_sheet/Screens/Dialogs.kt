@@ -2,9 +2,7 @@ package com.example.dnd_sheet.Screens
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -18,17 +16,77 @@ import androidx.compose.ui.unit.sp
 import com.example.dnd_sheet.CharacterAttributes
 import com.example.dnd_sheet.Items
 import com.example.dnd_sheet.Type
+import com.example.dnd_sheet.formatWeight
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 
+
 @Composable
-fun AddItemDialog(
+fun DeleteCharacterDialog(
+    characterToDelete: CharacterAttributes,
     onDismiss: () -> Unit,
-    onAddItem: (Items) -> Unit
+    onConfirm: (Long) -> Unit
 ) {
-    var newName by remember { mutableStateOf("") }
-    var newWeight by remember { mutableStateOf("") }
-    var newCount by remember { mutableStateOf("1") }
-    var newType by remember { mutableStateOf(Type.ARMORS) }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xE6151010),
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "⚠️", fontSize = 24.sp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Удалить героя?",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "Вы уверены, что хотите навсегда удалить ${characterToDelete.nickname}? Это действие нельзя отменить.",
+                color = Color.LightGray,
+                fontSize = 16.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(characterToDelete.id)
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.padding(horizontal = 4.dp)
+            ) {
+                Text("Удалить", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                border = BorderStroke(1.dp, Color.Gray),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
+            ) {
+                Text("Отмена")
+            }
+        }
+    )
+}
+
+
+
+@Composable
+fun ItemDialog(
+    itemToEdit: Items? = null,
+    onDismiss: () -> Unit,
+    onSaveItem: (Items) -> Unit
+) {
+    var newName by remember(itemToEdit) { mutableStateOf(itemToEdit?.name ?: "") }
+    var newWeight by remember(itemToEdit) { mutableStateOf(itemToEdit?.weight?.toString() ?: "") }
+    var newCount by remember(itemToEdit) { mutableStateOf(itemToEdit?.count?.toString() ?: "1") }
+    var newType by remember(itemToEdit) { mutableStateOf(itemToEdit?.itemType ?: Type.WEAPONS) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -36,8 +94,8 @@ fun AddItemDialog(
         shape = RoundedCornerShape(20.dp),
         title = {
             Text(
-                text = "Новый предмет",
-                color = Color(0xFFFFD700),
+                text = if (itemToEdit == null) "Новый предмет" else "Редактировать предмет",
+                color = GoldText,
                 fontWeight = FontWeight.Bold,
                 fontSize = 22.sp
             )
@@ -98,8 +156,8 @@ fun AddItemDialog(
 
                 fun getTypeName(type: Type): String {
                     return when (type) {
-                        Type.ARMORS -> "Оружие"
-                        Type.WEAPONS -> "Броня"
+                        Type.WEAPONS -> "Оружие"
+                        Type.ARMORS -> "Броня"
                         Type.CONSUMABLES -> "Расходники"
                         Type.MAGIC_ITEMS -> "Магические предметы"
                         Type.OTHER -> "Другое"
@@ -129,8 +187,8 @@ fun AddItemDialog(
                         modifier = Modifier.background(Color(0xFF2A1B1B))
                     ) {
                         listOf(
-                            Type.ARMORS,
                             Type.WEAPONS,
+                            Type.ARMORS,
                             Type.CONSUMABLES,
                             Type.MAGIC_ITEMS,
                             Type.OTHER
@@ -158,20 +216,20 @@ fun AddItemDialog(
                     val weight = newWeight.toFloatOrNull() ?: 0f
                     val count = newCount.toIntOrNull() ?: 1
                     if (newName.isNotBlank()) {
-                        onAddItem(
-                            Items(
-                                name = newName,
-                                weight = weight,
-                                count = count,
-                                itemType = newType
-                            )
-                        )
+                        val item = itemToEdit?.copy(
+                            name = newName,
+                            weight = weight,
+                            count = count,
+                            itemType = newType
+                        ) ?: Items(name = newName, weight = weight, count = count, itemType = newType)
+                        onSaveItem(item)
                         onDismiss()
                     }
                 },
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFFD700), contentColor = Color.Black)
+                enabled = newName.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = GoldText, contentColor = Color.Black)
             ) {
-                Text("Добавить", fontWeight = FontWeight.Bold)
+                Text(if (itemToEdit == null) "Добавить" else "Сохранить", fontWeight = FontWeight.Bold)
             }
         },
         dismissButton = {
@@ -180,6 +238,63 @@ fun AddItemDialog(
                 border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray)
             ) {
                 Text("Отмена", color = Color.LightGray)
+            }
+        }
+    )
+}
+
+
+
+@Composable
+fun DeleteItemDialog(
+    itemToDelete: Items,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xE6151010),
+        shape = RoundedCornerShape(20.dp),
+        title = {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(text = "⚠️", fontSize = 24.sp)
+                Spacer(modifier = Modifier.width(8.dp))
+                Text(
+                    text = "Удалить предмет?",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp
+                )
+            }
+        },
+        text = {
+            Text(
+                text = "Вы уверены, что хотите удалить «${itemToDelete.name}»?",
+                color = Color.LightGray,
+                fontSize = 16.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(itemToDelete.id)
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF5252)),
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.padding(horizontal = 4.dp)
+            ) {
+                Text("Удалить", fontWeight = FontWeight.Bold, color = Color.White)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                border = BorderStroke(1.dp, Color.Gray),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
+            ) {
+                Text("Отмена")
             }
         }
     )
@@ -195,9 +310,9 @@ fun PreviewAddItemDialog() {
                 .fillMaxSize()
                 .background(Color(0xFF1A1A24))
         ) {
-            AddItemDialog(
+            ItemDialog(
                 onDismiss = {},
-                onAddItem = {}
+                onSaveItem = {}
             )
         }
     }

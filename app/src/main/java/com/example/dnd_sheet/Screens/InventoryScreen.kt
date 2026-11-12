@@ -1,8 +1,10 @@
 package com.example.dnd_sheet.Screens
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -15,11 +17,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.blur
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -28,7 +32,9 @@ import com.example.dnd_sheet.CharacterAttributes
 import com.example.dnd_sheet.CharacterViewModel
 import com.example.dnd_sheet.Items
 import com.example.dnd_sheet.R
+import com.example.dnd_sheet.Screens.GoldGlow
 import com.example.dnd_sheet.Type
+import com.example.dnd_sheet.formatWeight
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 
 
@@ -36,16 +42,21 @@ val DarkStone = Color(0xE6151010)
 val GoldText = Color(0xFFFFD700)
 val WoodBrown = Color(0xFF4E342E)
 
+
 @Composable
 fun InventoryScreen(
     character: CharacterAttributes,
     addItem: (item: Items) -> Unit,
+    updateItem: (item: Items) -> Unit,
     removeItem: (itemId: Long) -> Unit,
-    filterItems: (typeItems: Type) -> Unit,
+    changeCount: (itemId: Long, delta: Int) -> Unit,
     toBack: () -> Unit,
 ) {
 
     var showAddDialog by remember { mutableStateOf(false) }
+    var itemToEdit by remember { mutableStateOf<Items?>(null) }
+    var selectedFilter by remember { mutableStateOf(Type.ALL) }
+    var itemToDelete by remember { mutableStateOf<Items?>(null) }
 
     Box {
         Image(
@@ -92,7 +103,7 @@ fun InventoryScreen(
                         fontSize = 18.sp
                     )
                     Text(
-                        text = "Вес: ${character.totalWeight} кг",
+                        text = "Вес: ${formatWeight(character.totalWeight)} фнт",
                         color = GoldText,
                         fontSize = 14.sp
                     )
@@ -111,28 +122,28 @@ fun InventoryScreen(
 
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                FilterButton("⚔️", "Оружие", Modifier.weight(1f)) {
-                    filterItems(Type.ARMORS)
+                FilterButton("⚔️", "Оружие", isSelected = selectedFilter == Type.WEAPONS, Modifier.weight(1f)) {
+                    selectedFilter = Type.WEAPONS
                 }
-                FilterButton("🛡️", "Броня", Modifier.weight(1f)) {
-                    filterItems(Type.WEAPONS)
+                FilterButton("🛡️", "Броня", isSelected = selectedFilter == Type.ARMORS, Modifier.weight(1f)) {
+                    selectedFilter = Type.ARMORS
                 }
-                FilterButton("\uD83E\uDDEA", "Расходники", Modifier.weight(1f)) {
-                    filterItems(Type.CONSUMABLES)
+                FilterButton("\uD83E\uDDEA", "Расходники", isSelected = selectedFilter == Type.CONSUMABLES, Modifier.weight(1f)) {
+                    selectedFilter = Type.CONSUMABLES
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                FilterButton("✨", "Маг предметы", Modifier.weight(1f)) {
-                    filterItems(Type.MAGIC_ITEMS)
+                FilterButton("✨", "Маг предметы", isSelected = selectedFilter == Type.MAGIC_ITEMS, Modifier.weight(1f)) {
+                    selectedFilter = Type.MAGIC_ITEMS
                 }
-                FilterButton("\uD83D\uDCE6", "Другое", Modifier.weight(1f)) {
-                    filterItems(Type.OTHER)
+                FilterButton("\uD83D\uDCE6", "Другое", isSelected = selectedFilter == Type.OTHER, Modifier.weight(1f)) {
+                    selectedFilter = Type.OTHER
                 }
-                FilterButton("\uD83C\uDF92", "Все предметы", Modifier.weight(1f)) {
-                    filterItems(Type.ALL)
+                FilterButton("\uD83C\uDF92", "Все предметы", isSelected = selectedFilter == Type.ALL, Modifier.weight(1f)) {
+                    selectedFilter = Type.ALL
                 }
             }
 
@@ -161,75 +172,147 @@ fun InventoryScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             val filteredInventory = when {
-                character.typeItems == Type.ALL -> character.inventory
-                else -> character.inventory.filter { it.itemType == character.typeItems }
-            }
+                selectedFilter == Type.ALL -> character.inventory
+                else -> character.inventory.filter { it.itemType == selectedFilter }
+            }.sortedBy { it.name }
 
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.weight(1f)
             ) {
                 items(filteredInventory, key = { it.id }) { item ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(10.dp),
                         colors = CardDefaults.cardColors(containerColor = DarkStone),
-                        border = androidx.compose.foundation.BorderStroke(1.dp, GoldText.copy(alpha = 0.2f))
+                        border = androidx.compose.foundation.BorderStroke(1.dp, GoldText.copy(alpha = 0.15f))
                     ) {
                         Row(
-                            modifier = Modifier.fillMaxWidth().padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                val icon = when(item.itemType) {
-                                    Type.WEAPONS -> "⚔️"
-                                    Type.ARMORS -> "🛡️"
-                                    Type.MAGIC_ITEMS -> "✨"
-                                    Type.CONSUMABLES -> "\uD83E\uDDEA"
-                                    Type.OTHER -> "📦"
-                                    Type.ALL -> ""
-                                }
-                                Text(icon, fontSize = 28.sp, modifier = Modifier.padding(end = 12.dp))
+                            val icon = when(item.itemType) {
+                                Type.WEAPONS -> "⚔️"
+                                Type.ARMORS -> "🛡️"
+                                Type.MAGIC_ITEMS -> "✨"
+                                Type.CONSUMABLES -> "🧪"
+                                Type.OTHER -> "📦"
+                                else -> "📦"
+                            }
+                            Text(icon, fontSize = 22.sp, modifier = Modifier.padding(end = 10.dp))
 
-                                Column {
-                                    Text(item.name, style = MaterialTheme.typography.titleMedium, color = Color.White)
-                                    Text("Тип: ${item.itemType}", color = Color.Gray, fontSize = 12.sp)
-                                }
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(
+                                    text = item.name,
+                                    style = MaterialTheme.typography.bodyLarge,
+                                    fontWeight = FontWeight.Bold,
+                                    color = GoldText,
+                                    maxLines = 1
+                                )
+                                Text(
+                                    text = "⚖️ ${formatWeight(item.weight)} фнт",
+                                    fontSize = 11.sp,
+                                    color = Color.LightGray
+                                )
                             }
 
                             Column(horizontalAlignment = Alignment.End) {
-                                Text("${item.weight} x ${item.count}", color = GoldText, fontWeight = FontWeight.Bold)
-                                Text("= ${item.totalWeight} кг", color = Color.LightGray, fontSize = 12.sp)
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = { changeCount(item.id, -1) },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Text("−", fontSize = 18.sp, color = Color.LightGray)
+                                    }
 
-                                IconButton(onClick = { removeItem(item.id) }) {
-                                    Text("🗑️", fontSize = 20.sp)
+                                    Text(
+                                        text = "${item.count}",
+                                        fontSize = 14.sp,
+                                        color = GoldText,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.padding(horizontal = 4.dp)
+                                    )
+
+                                    IconButton(
+                                        onClick = { changeCount(item.id, 1) },
+                                        modifier = Modifier.size(28.dp)
+                                    ) {
+                                        Text("+", fontSize = 18.sp, color = GoldText)
+                                    }
                                 }
+
+
+                                Text(
+                                    text = "${formatWeight(item.totalWeight)} фнт",
+                                    fontSize = 14.sp,
+                                    color = GoldText.copy(alpha = 0.7f),
+                                    textAlign = TextAlign.Center,
+                                    modifier = Modifier.padding(end = 5.dp)
+                                )
+                            }
+
+                            IconButton(
+                                onClick = { itemToEdit = item },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Text("✏️", fontSize = 20.sp)
+                            }
+
+                            IconButton(
+                                onClick = { itemToDelete = item },
+                                modifier = Modifier.size(36.dp)
+                            ) {
+                                Text("🗑️", fontSize = 20.sp)
                             }
                         }
                     }
                 }
+
             }
         }
+
     }
     if (showAddDialog) {
-        AddItemDialog(
+        ItemDialog(
+            itemToEdit = null,
             onDismiss = { showAddDialog = false },
-            onAddItem = { newItem ->
-                addItem(newItem)
+            onSaveItem = { newItem -> addItem(newItem) }
+        )
+    }
+
+    if (itemToEdit != null) {
+        ItemDialog(
+            itemToEdit = itemToEdit,
+            onDismiss = { itemToEdit = null },
+            onSaveItem = { updatedItem ->
+                updateItem(updatedItem)
+                itemToEdit = null
             }
+        )
+    }
+
+    if (itemToDelete != null) {
+        DeleteItemDialog(
+            itemToDelete = itemToDelete!!,
+            onDismiss = { itemToDelete = null },
+            onConfirm = { itemId -> removeItem(itemId) }
         )
     }
 }
 
 
 @Composable
-fun FilterButton(icon: String, text: String, modifier: Modifier = Modifier, onClick: () -> Unit) {
+fun FilterButton(icon: String, text: String, isSelected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
     Button(
         onClick = onClick,
         modifier = modifier.height(60.dp),
         shape = RoundedCornerShape(12.dp),
-        colors = ButtonDefaults.buttonColors(containerColor = WoodBrown.copy(alpha = 0.8f)),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = if (isSelected) GoldText.copy(alpha = 0.5f) else WoodBrown.copy(alpha = 0.8f),
+            contentColor = if (isSelected) Color.White else GoldText
+        ),
         border = androidx.compose.foundation.BorderStroke(1.dp, GoldText.copy(alpha = 0.4f)),
         contentPadding = PaddingValues(2.dp)
     ) {
@@ -254,8 +337,9 @@ fun PreviewInventoryScreen() {
                 )
             ),
             addItem = {},
+            updateItem = {},
             removeItem = {},
-            filterItems = {},
+            changeCount = { _, _ -> },
             toBack = {}
         )
     }

@@ -129,53 +129,12 @@ fun MainScreen(
             }
         }
     }
+
     if (characterToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { characterToDelete = null },
-            containerColor = Color(0xE6151010),
-            shape = RoundedCornerShape(20.dp),
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "⚠️", fontSize = 24.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Удалить героя?",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    )
-                }
-            },
-            text = {
-                Text(
-                    text = "Вы уверены, что хотите навсегда удалить ${characterToDelete?.nickname}? Это действие нельзя отменить.",
-                    color = Color.LightGray,
-                    fontSize = 16.sp
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        characterToDelete?.let { onRemoveCharacter(it.id) }
-                        characterToDelete = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = DragonFire),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                ) {
-                    Text("Удалить", fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { characterToDelete = null },
-                    border = BorderStroke(1.dp, Color.Gray),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
-                ) {
-                    Text("Отмена")
-                }
-            }
+        DeleteCharacterDialog(
+            characterToDelete = characterToDelete!!,
+            onDismiss = { characterToDelete = null },
+            onConfirm = { id -> onRemoveCharacter(id) }
         )
     }
 }

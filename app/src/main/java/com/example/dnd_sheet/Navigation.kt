@@ -66,8 +66,9 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                     InventoryScreen(
                         character = character,
                         addItem = { item -> characterViewModel.addItem(route.characterId, item) },
+                        updateItem = { item -> characterViewModel.updateItem(route.characterId, item) },
                         removeItem = { itemId -> characterViewModel.removeItem(route.characterId, itemId) },
-                        filterItems = { typeItems -> characterViewModel.filterItems(route.characterId, typeItems)},
+                        changeCount = { itemId, delta -> characterViewModel.changeItemCount(route.characterId, itemId, delta) },
                         toBack = { backStack.removeLastOrNull() }
                     )
                 }

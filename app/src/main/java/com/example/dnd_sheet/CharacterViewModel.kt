@@ -209,12 +209,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
     ////////////////////////////////////////////////////////////////////////////////Инвентарь
 
-    fun filterItems(id: Long, type: Type) {
-        val character = getCharacter(id) ?: return
-        updateCharacter(id, character.copy(typeItems = type))
-
-        //То, что тут нет сэйва это не баг
-    }
 
     fun addItem(id: Long, item: Items){
         val character = getCharacter(id) ?: return
@@ -231,5 +225,31 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
         saveToDisk()
     }
+
+    fun changeItemCount(characterId: Long, itemId: Long, delta: Int) {
+        val character = getCharacter(characterId) ?: return
+        val updatedInventory = character.inventory.map { item ->
+            if (item.id == itemId) {
+                val newCount = (item.count + delta).coerceAtLeast(0)
+                item.copy(count = newCount)
+            } else {
+                item
+            }
+        }
+
+        updateCharacter(characterId, character.copy(inventory = updatedInventory))
+    }
+
+    fun updateItem(characterId: Long, updatedItem: Items) {
+        val character = getCharacter(characterId) ?: return
+        val newInventory = character.inventory.map { item ->
+            if (item.id == updatedItem.id) updatedItem else item
+        }
+        updateCharacter(characterId, character.copy(inventory = newInventory))
+
+        saveToDisk()
+    }
+
+
 
 }

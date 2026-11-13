@@ -36,15 +36,14 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import com.example.dnd_sheet.CharState
 import com.example.dnd_sheet.CharacterAttributes
+import com.example.dnd_sheet.DragonFire
+import com.example.dnd_sheet.GlassDark
+import com.example.dnd_sheet.GoldGlow
+import com.example.dnd_sheet.LightningBlue
 import com.example.dnd_sheet.R
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 import java.io.File
 
-
-val GlassDark = Color(0xCC1A1A24)
-val DragonFire = Color(0xFFFF5252)
-val LightningBlue = Color(0xFF00E5FF)
-val GoldGlow = Color(0xFFFFD700)
 
 @Composable
 fun MainScreen(
@@ -213,7 +212,7 @@ fun CharacterCard(
                         .horizontalScroll(rememberScrollState())
                 ) {
                     Text(
-                        text = character.nickname.ifEmpty { "Без имени" },
+                        text = character.nickname.ifEmpty { "Инкогнито" },
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
                         color = GoldGlow,

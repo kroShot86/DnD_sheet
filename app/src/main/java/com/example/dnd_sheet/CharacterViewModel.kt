@@ -251,5 +251,45 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
     }
 
 
+    //Скиллы
+    fun toggleSkill(characterId: Long, skillName: String) {
+        val character = getCharacter(characterId) ?: return
+        val updatedSkills = character.skills.map { skill ->
+            if (skill.name == skillName) {
+                val newLevel = when (skill.proficiency) {
+                    ProficiencyLevel.NONE -> ProficiencyLevel.PROFICIENT
+                    ProficiencyLevel.PROFICIENT -> ProficiencyLevel.EXPERTISE
+                    ProficiencyLevel.EXPERTISE -> ProficiencyLevel.NONE
+                }
+                skill.copy(proficiency = newLevel)
+            } else {
+                skill
+            }
+        }
+        updateCharacter(characterId, character.copy(skills = updatedSkills))
+    }
+
+    fun updateSkillExtraBonus(characterId: Long, skillName: String, bonus: Int) {
+        val character = getCharacter(characterId) ?: return
+        val updatedSkills = character.skills.map { skill ->
+            if (skill.name == skillName) skill.copy(extraBonus = bonus) else skill
+        }
+        updateCharacter(characterId, character.copy(skills = updatedSkills))
+    }
+
+    fun toggleSave(characterId: Long, stat: StatType) {
+        val character = getCharacter(characterId) ?: return
+        val currentSaves = character.proficientSaves.toMutableList()
+        if (currentSaves.contains(stat)) currentSaves.remove(stat) else currentSaves.add(stat)
+        updateCharacter(characterId, character.copy(proficientSaves = currentSaves))
+    }
+
+    fun updateSaveExtraBonus(characterId: Long, stat: StatType, bonus: Int) {
+        val character = getCharacter(characterId) ?: return
+        val newBonuses = character.saveExtraBonuses.toMutableMap()
+        newBonuses[stat] = bonus
+        updateCharacter(characterId, character.copy(saveExtraBonuses = newBonuses))
+    }
+
 
 }

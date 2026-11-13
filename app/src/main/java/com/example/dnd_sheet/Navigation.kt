@@ -12,6 +12,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import com.example.dnd_sheet.Screens.InventoryScreen
 import com.example.dnd_sheet.Screens.MainScreen
 import com.example.dnd_sheet.Screens.CharacterScreen
+import com.example.dnd_sheet.Screens.SkillsScreen
+
 
 @Serializable
 data object MainScreenRoute : NavKey
@@ -21,6 +23,10 @@ data class CharacterScreenRoute(val characterId: Long) : NavKey
 
 @Serializable
 data class InventoryScreenRoute(val characterId: Long) : NavKey
+
+@Serializable
+data class SkillsScreenRoute(val characterId: Long) : NavKey
+
 
 @Composable
 fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
@@ -54,6 +60,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         updateAvatar = { uri -> characterViewModel.updateAvatar(route.characterId, uri) },
                         reset = { characterViewModel.reset(route.characterId) },
                         toInventory = {id -> backStack.add(InventoryScreenRoute(id)) },
+                        toSkills = {id -> backStack.add(SkillsScreenRoute(id))},
                         toBack = { backStack.removeLastOrNull() },
                         modifier = modifier
                     )
@@ -72,8 +79,22 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         toBack = { backStack.removeLastOrNull() }
                     )
                 }
-
             }
+
+            entry <SkillsScreenRoute> { route ->
+                val character = characterViewModel.getCharacter(route.characterId)
+                if (character != null){
+                    SkillsScreen(
+                        character = character,
+                        onToggleSkill = {skillName -> characterViewModel.toggleSkill(route.characterId, skillName)},
+                        onToggleSave = { statName -> characterViewModel.toggleSave(route.characterId, statName) },
+                        onUpdateSkillBonus = { skillName, bonus -> characterViewModel.updateSkillExtraBonus(route.characterId, skillName, bonus) },
+                        onUpdateSaveBonus = { stat, bonus -> characterViewModel.updateSaveExtraBonus(route.characterId, stat, bonus) },
+                        toBack = { backStack.removeLastOrNull() }
+                    )
+                }
+            }
+
         }
     )
 }

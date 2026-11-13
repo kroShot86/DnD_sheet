@@ -30,17 +30,15 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImagePainter
 import com.example.dnd_sheet.CharacterAttributes
 import com.example.dnd_sheet.CharacterViewModel
+import com.example.dnd_sheet.DarkStone
+import com.example.dnd_sheet.GoldGlow
+import com.example.dnd_sheet.GoldText
 import com.example.dnd_sheet.Items
 import com.example.dnd_sheet.R
-import com.example.dnd_sheet.Screens.GoldGlow
 import com.example.dnd_sheet.Type
+import com.example.dnd_sheet.WoodBrown
 import com.example.dnd_sheet.formatWeight
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
-
-
-val DarkStone = Color(0xE6151010)
-val GoldText = Color(0xFFFFD700)
-val WoodBrown = Color(0xFF4E342E)
 
 
 @Composable
@@ -103,8 +101,11 @@ fun InventoryScreen(
                         fontSize = 18.sp
                     )
                     Text(
-                        text = "Вес: ${formatWeight(character.totalWeight)} фнт",
-                        color = GoldText,
+                        text = "Вес: ${formatWeight(character.totalWeight)} / ${character.strength * 15} фнт",
+                        color = when {
+                            character.totalWeight <= character.strength * 15 -> GoldGlow
+                            else -> Color.Red
+                        },
                         fontSize = 14.sp
                     )
                 }

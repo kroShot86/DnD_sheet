@@ -4,25 +4,28 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.dnd_sheet.CharacterAttributes
+import com.example.dnd_sheet.Models.CharacterAttributes
 import com.example.dnd_sheet.GoldText
-import com.example.dnd_sheet.Items
-import com.example.dnd_sheet.Type
-import com.example.dnd_sheet.formatWeight
+import com.example.dnd_sheet.Models.Items
+import com.example.dnd_sheet.Models.Type
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
-
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.example.dnd_sheet.Feature
+import com.example.dnd_sheet.Models.Spell
+import com.example.dnd_sheet.Models.SpellLevel
+import com.example.dnd_sheet.TextCyan
+import com.example.dnd_sheet.clearFocusOnTap
 
 
 //MainScreen диалоги
@@ -98,14 +101,22 @@ fun NumberInputDialog(
         containerColor = Color(0xE6151010),
         shape = RoundedCornerShape(20.dp),
         title = {
-            Text(
-                text = title,
-                color = themeColor,
-                fontWeight = FontWeight.Bold,
-                fontSize = 22.sp,
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                textAlign = TextAlign.Center
-            )
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    color = themeColor,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 22.sp,
+                )
+                // Кнопка закрытия (крестик)
+                IconButton(onClick = onDismiss) {
+                    Text("✖", color = Color.Gray, fontSize = 20.sp)
+                }
+            }
         },
         text = {
             Column(
@@ -135,6 +146,7 @@ fun NumberInputDialog(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
+                    // Кнопка Backspace
                     Button(
                         onClick = {
                             if (amount.isNotEmpty()) {
@@ -242,6 +254,7 @@ fun ItemDialog(
                 fontSize = 22.sp
             )
         },
+        modifier = Modifier.clearFocusOnTap(),
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedTextField(
@@ -437,6 +450,256 @@ fun DeleteItemDialog(
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
             ) {
                 Text("Отмена")
+            }
+        }
+    )
+}
+
+@Composable
+fun SpellDialog(
+    spellToEdit: Spell? = null,
+    onDismiss: () -> Unit,
+    onSave: (Spell) -> Unit
+) {
+    var name by remember(spellToEdit) { mutableStateOf(spellToEdit?.name ?: "") }
+    var level by remember(spellToEdit) { mutableStateOf(spellToEdit?.level ?: SpellLevel.CANTRIP) }
+    var description by remember(spellToEdit) { mutableStateOf(spellToEdit?.description ?: "") }
+    var expanded by remember { mutableStateOf(false) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xE6101520),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.clearFocusOnTap(),
+        title = {
+            Text(
+                text = if (spellToEdit == null) "✨ Новое заклинание" else "✏️ Редактировать",
+                color = TextCyan,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Название") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = TextCyan,
+                        unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                        focusedLabelColor = TextCyan,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                Box {
+                    OutlinedButton(
+                        onClick = { expanded = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        border = BorderStroke(1.dp, TextCyan.copy(alpha = 0.5f)),
+                        colors = ButtonDefaults.outlinedButtonColors(contentColor = TextCyan)
+                    ) {
+                        Text(text = "Уровень: ${level.displayName}", modifier = Modifier.weight(1f))
+                        Text("▼")
+                    }
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                        modifier = Modifier.background(Color(0xFF101820))
+                    ) {
+                        SpellLevel.entries.forEach { lvl ->
+                            DropdownMenuItem(
+                                text = { Text(lvl.displayName, color = if (level == lvl) TextCyan else Color.White) },
+                                onClick = {
+                                    level = lvl
+                                    expanded = false
+                                }
+                            )
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Описание / Эффект") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = TextCyan,
+                        unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                        focusedLabelColor = TextCyan,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth().height(120.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val spell = spellToEdit?.copy(
+                        name = name, level = level, description = description
+                    ) ?: Spell(name = name, level = level, description = description)
+                    onSave(spell)
+                    onDismiss()
+                },
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = TextCyan, contentColor = Color.Black)
+            ) {
+                Text(if (spellToEdit == null) "Добавить" else "Сохранить", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                border = BorderStroke(1.dp, Color.Gray),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
+            ) {
+                Text("Отмена")
+            }
+        }
+    )
+}
+
+@Composable
+fun SpellSlotDialog(
+    currentMax: Int,
+    onDismiss: () -> Unit,
+    onSave: (Int) -> Unit
+) {
+    var amount by remember { mutableStateOf(if (currentMax == 0) "" else currentMax.toString()) }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xE6101520),
+        shape = RoundedCornerShape(16.dp),
+        modifier = Modifier.clearFocusOnTap(),
+        title = { Text("🔮 Настроить ячейки", color = TextCyan, fontWeight = FontWeight.Bold) },
+        text = {
+            OutlinedTextField(
+                value = amount,
+                onValueChange = { if (it.length <= 2 && it.all { char -> char.isDigit() }) amount = it },
+                label = { Text("Максимум ячеек") },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedTextColor = Color.White,
+                    unfocusedTextColor = Color.White,
+                    focusedBorderColor = TextCyan,
+                    unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                    focusedLabelColor = TextCyan,
+                    unfocusedLabelColor = Color.Gray
+                ),
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onSave(amount.toIntOrNull() ?: 0)
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = TextCyan, contentColor = Color.Black)
+            ) {
+                Text("Сохранить", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(onClick = onDismiss, border = BorderStroke(1.dp, Color.Gray)) {
+                Text("Отмена", color = Color.LightGray)
+            }
+        }
+    )
+}
+
+
+@Composable
+fun FeatureDialog(
+    featureToEdit: Feature? = null,
+    onDismiss: () -> Unit,
+    onSave: (Feature) -> Unit
+) {
+    var name by remember(featureToEdit) { mutableStateOf(featureToEdit?.name ?: "") }
+    var description by remember(featureToEdit) { mutableStateOf(featureToEdit?.description ?: "") }
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0D1117),
+        shape = RoundedCornerShape(16.dp),
+        title = {
+            Text(
+                text = if (featureToEdit == null) "🩸 Новое умение" else "✏️ Редактировать",
+                color = IceBlue,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        text = {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Название (напр. Второе дыхание)") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = IceBlue,
+                        unfocusedBorderColor = IceBlue.copy(alpha = 0.3f),
+                        focusedLabelColor = IceBlue,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = description,
+                    onValueChange = { description = it },
+                    label = { Text("Описание / Эффект") },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = IceBlue,
+                        unfocusedBorderColor = IceBlue.copy(alpha = 0.3f),
+                        focusedLabelColor = IceBlue,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth().height(120.dp)
+                )
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    val feature = featureToEdit?.copy(name = name, description = description)
+                        ?: Feature(name = name, description = description)
+                    onSave(feature)
+                    onDismiss()
+                },
+                enabled = name.isNotBlank(),
+                colors = ButtonDefaults.buttonColors(containerColor = IceBlue, contentColor = Color.Black)
+            ) {
+                Text("Сохранить", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                border = BorderStroke(1.dp, Color.Gray)
+            ) {
+                Text("Отмена", color = Color.LightGray)
             }
         }
     )

@@ -1,13 +1,15 @@
-package com.example.dnd_sheet
+package com.example.dnd_sheet.Models
 
+import com.example.dnd_sheet.Feature
 import kotlinx.serialization.Serializable
+import java.util.UUID
 
 @Serializable
 enum class CharState { HEALTHY, UNCONSCIOUS, DEAD }
 @Serializable
 data class CharacterAttributes(
 
-    val id: Long = java.util.UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE,
+    val id: Long = UUID.randomUUID().mostSignificantBits and Long.MAX_VALUE,
 
     val nickname: String = "Инкогнито",
     val characterClass: String = "",
@@ -21,7 +23,13 @@ data class CharacterAttributes(
     val wisdom: Int = 10,
     val charisma: Int = 10,
 
-    val currentHp: Int = 10 + (constitution * 2),
+    val maxHp: Int = 10,
+    val currentHp: Int = 10,
+
+    val deathSavesSuccesses: Int = 0,
+    val deathSavesFailures: Int = 0,
+
+    val currentCountDice: Int = level,
 
     val currentState: CharState = CharState.HEALTHY,
 
@@ -58,16 +66,21 @@ data class CharacterAttributes(
     val ideals: String = "",           // Идеалы
     val bonds: String = "",            // Привязанности
     val flaws: String = "",            // Слабости
-    val notes: String = ""             // Записи
+    val notes: String = "",            // Записи
+
+    val spells: List<Spell> = emptyList(),
+    val spellSlots: Map<SpellLevel, SpellSlots> = emptyMap(),
+
+    val features: List<Feature> = emptyList(),
+    val proficiencies: String = ""
 
 ){
 
-
-    val maxHp: Int
-        get() = 10 + (constitution * 2)
-
     val totalWeight: Float
         get() = inventory.sumOf { it.totalWeight.toDouble() }.toFloat()
+
+    val maxCountDice: Int
+        get() = level
 
     val proficiencyBonus: Int
         get() = when (level) {

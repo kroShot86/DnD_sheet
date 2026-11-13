@@ -4,8 +4,6 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -21,8 +19,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -30,11 +26,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dnd_sheet.BookGlass
-import com.example.dnd_sheet.CharacterAttributes
+import com.example.dnd_sheet.Models.CharacterAttributes
 import com.example.dnd_sheet.DarkShadow
 import com.example.dnd_sheet.GoldInk
 import com.example.dnd_sheet.R
 import com.example.dnd_sheet.WarmText
+import com.example.dnd_sheet.clearFocusOnTap
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 
 
@@ -50,20 +47,11 @@ fun HistoryScreen(
     toBack: () -> Unit,
 ) {
 
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    focusManager.clearFocus()
-                    keyboardController?.hide()
-                }
-            )
+            .clearFocusOnTap()
     ) {
         Image(
             painter = painterResource(R.drawable.back_history_screen),

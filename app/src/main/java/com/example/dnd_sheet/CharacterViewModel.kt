@@ -1,11 +1,16 @@
 package com.example.dnd_sheet
 
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.dnd_sheet.Models.CharState
+import com.example.dnd_sheet.Models.CharacterAttributes
+import com.example.dnd_sheet.Models.Items
+import com.example.dnd_sheet.Models.ProficiencyLevel
+import com.example.dnd_sheet.Models.Spell
+import com.example.dnd_sheet.Models.SpellLevel
+import com.example.dnd_sheet.Models.SpellSlots
+import com.example.dnd_sheet.Models.StatType
 import kotlinx.coroutines.launch
 
 
@@ -101,7 +106,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
         updateCharacter(id, character.copy(currentHp = newHp, currentState = newState))
 
-        saveToDisk()
     }
 
     fun heal(id: Long, amount: Int){
@@ -110,10 +114,30 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
         val newHp = (character.currentHp + amount).coerceAtMost(maximumValue = character.maxHp)
 
-        updateCharacter(id, character.copy(currentHp = newHp, currentState = CharState.HEALTHY))
 
-        saveToDisk()
+        updateCharacter(id, character.copy(currentHp = newHp, currentState = CharState.HEALTHY, deathSavesSuccesses = 0, deathSavesFailures = 0))
 
+    }
+
+    fun updateDeathSave(characterId: Long, isSuccess: Boolean, delta: Int) {
+        val character = getCharacter(characterId) ?: return
+
+        var newSuccesses = character.deathSavesSuccesses
+        var newFailures = character.deathSavesFailures
+
+        if (isSuccess) {
+            newSuccesses = (newSuccesses + delta).coerceIn(0, 3)
+        } else {
+            newFailures = (newFailures + delta).coerceIn(0, 3)
+        }
+
+        updateCharacter(
+            characterId,
+            character.copy(
+                deathSavesSuccesses = newSuccesses,
+                deathSavesFailures = newFailures
+            )
+        )
     }
 
     fun updateLevel(id: Long){
@@ -144,15 +168,12 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
         updateCharacter(id, newCharacter)
 
-        saveToDisk()
     }
 
     fun updateExp(id: Long, newExp: Int) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(exp = newExp))
         updateLevel(id)
-
-        saveToDisk()
     }
 
     fun updateClass(id: Long, newClass: String) {
@@ -160,7 +181,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
         updateCharacter(id, character.copy(characterClass = newClass))
 
-        saveToDisk()
     }
 
     fun updateNickname(id: Long, newNickname: String) {
@@ -168,7 +188,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
         updateCharacter(id, character.copy(nickname = newNickname))
 
-        saveToDisk()
     }
 
     fun updateStat(id: Long, attributeName: String, value: Int) {
@@ -185,14 +204,12 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         }
         updateCharacter(id, newCharacter)
 
-        saveToDisk()
     }
 
     fun updateAvatar(id: Long, newUri: String?) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(avatarUri = newUri))
 
-        saveToDisk()
     }
 
     fun reset(id: Long) {
@@ -200,11 +217,31 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
 
         val newCharacter = character.copy(
             currentHp = character.maxHp,
-            currentState = CharState.HEALTHY
+            currentState = CharState.HEALTHY,
+            deathSavesSuccesses = 0,
+            deathSavesFailures = 0,
+            currentCountDice = character.maxCountDice
         )
         updateCharacter(id, newCharacter)
 
-        saveToDisk()
+    }
+
+    fun updateMaxHp(id: Long, newMaxHp: Int) {
+        val character = getCharacter(id) ?: return
+
+        if (newMaxHp > 0){
+            updateCharacter(id, character.copy(maxHp = newMaxHp))
+        } else {
+            return
+        }
+
+    }
+
+    fun updateHitDice(characterId: Long, delta: Int) {
+        val character = getCharacter(characterId) ?: return
+        val newCurrentCountDice = (character.currentCountDice - delta).coerceIn(0, character.level)
+
+        updateCharacter(characterId, character.copy(currentCountDice = newCurrentCountDice))
     }
 
     ////////////////////////////////////////////////////////////////////////////////Инвентарь
@@ -215,7 +252,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         val newInventory = character.inventory + item
         updateCharacter(id, character.copy(inventory = newInventory))
 
-        saveToDisk()
     }
 
     fun removeItem(id: Long, itemId: Long){
@@ -223,7 +259,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         val newInventory = character.inventory.filterNot { it.id == itemId }
         updateCharacter(id, character.copy(inventory = newInventory))
 
-        saveToDisk()
     }
 
     fun changeItemCount(characterId: Long, itemId: Long, delta: Int) {
@@ -247,11 +282,10 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         }
         updateCharacter(characterId, character.copy(inventory = newInventory))
 
-        saveToDisk()
     }
 
 
-    //Скиллы
+    //Навыки
     fun toggleSkill(characterId: Long, skillName: String) {
         val character = getCharacter(characterId) ?: return
         val updatedSkills = character.skills.map { skill ->
@@ -265,7 +299,7 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
             } else {
                 skill
             }
-        }
+        }.sortedBy { it.name }
         updateCharacter(characterId, character.copy(skills = updatedSkills))
     }
 
@@ -273,7 +307,7 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         val character = getCharacter(characterId) ?: return
         val updatedSkills = character.skills.map { skill ->
             if (skill.name == skillName) skill.copy(extraBonus = bonus) else skill
-        }
+        }.sortedBy { it.name }
         updateCharacter(characterId, character.copy(skills = updatedSkills))
     }
 
@@ -296,37 +330,97 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
     fun updateAlignment(id: Long, value: String) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(alignment = value))
-        saveToDisk()
     }
 
     fun updateBackstory(id: Long, value: String) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(backstory = value))
-        saveToDisk()
     }
 
     fun updateIdeals(id: Long, value: String) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(ideals = value))
-        saveToDisk()
     }
 
     fun updateBonds(id: Long, value: String) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(bonds = value))
-        saveToDisk()
     }
 
     fun updateFlaws(id: Long, value: String) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(flaws = value))
-        saveToDisk()
     }
 
     fun updateNotes(id: Long, value: String) {
         val character = getCharacter(id) ?: return
         updateCharacter(id, character.copy(notes = value))
-        saveToDisk()
+    }
+
+    // Магия
+    fun addSpell(characterId: Long, spell: Spell) {
+        val character = getCharacter(characterId) ?: return
+        updateCharacter(characterId, character.copy(spells = character.spells + spell))
+    }
+
+    fun updateSpell(characterId: Long, updatedSpell: Spell) {
+        val character = getCharacter(characterId) ?: return
+        val newSpells = character.spells.map { if (it.id == updatedSpell.id) updatedSpell else it }
+        updateCharacter(characterId, character.copy(spells = newSpells))
+    }
+
+    fun removeSpell(characterId: Long, spellId: Long) {
+        val character = getCharacter(characterId) ?: return
+        val newSpells = character.spells.filterNot { it.id == spellId }
+        updateCharacter(characterId, character.copy(spells = newSpells))
+    }
+
+    fun toggleSpellPrepared(characterId: Long, spellId: Long) {
+        val character = getCharacter(characterId) ?: return
+        val newSpells = character.spells.map {
+            if (it.id == spellId) it.copy(isPrepared = !it.isPrepared) else it
+        }
+        updateCharacter(characterId, character.copy(spells = newSpells))
+    }
+
+    fun updateSpellSlot(characterId: Long, level: SpellLevel, newMax: Int? = null, newUsed: Int? = null) {
+        val character = getCharacter(characterId) ?: return
+        val currentSlots = character.spellSlots.toMutableMap()
+        val current = currentSlots[level] ?: SpellSlots()
+        currentSlots[level] = current.copy(
+            max = newMax ?: current.max,
+            used = newUsed ?: current.used
+        )
+        updateCharacter(characterId, character.copy(spellSlots = currentSlots))
+    }
+
+    fun resetSpellSlots(characterId: Long) {
+        val character = getCharacter(characterId) ?: return
+        val resetSlots = character.spellSlots.mapValues { it.value.copy(used = 0) }
+        updateCharacter(characterId, character.copy(spellSlots = resetSlots))
+    }
+
+
+    //Умения
+    fun updateProficiencies(characterId: Long, text: String) {
+        val character = getCharacter(characterId) ?: return
+        updateCharacter(characterId, character.copy(proficiencies = text))
+    }
+
+    fun addFeature(characterId: Long, feature: Feature) {
+        val character = getCharacter(characterId) ?: return
+        updateCharacter(characterId, character.copy(features = character.features + feature))
+    }
+
+    fun updateFeature(characterId: Long, feature: Feature) {
+        val character = getCharacter(characterId) ?: return
+        val newFeatures = character.features.map { if (it.id == feature.id) feature else it }
+        updateCharacter(characterId, character.copy(features = newFeatures))
+    }
+
+    fun removeFeature(characterId: Long, featureId: Long) {
+        val character = getCharacter(characterId) ?: return
+        updateCharacter(characterId, character.copy(features = character.features.filterNot { it.id == featureId }))
     }
 
 }

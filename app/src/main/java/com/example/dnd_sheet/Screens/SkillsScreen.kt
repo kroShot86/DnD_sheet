@@ -5,14 +5,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,9 +19,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.TextStyle
@@ -34,15 +31,16 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.dnd_sheet.CharacterAttributes
+import com.example.dnd_sheet.Models.CharacterAttributes
 import com.example.dnd_sheet.DarkShadow
 import com.example.dnd_sheet.GoldAccent
 import com.example.dnd_sheet.IceGlass
-import com.example.dnd_sheet.ProficiencyLevel
-import com.example.dnd_sheet.StatType
-import com.example.dnd_sheet.Skill
+import com.example.dnd_sheet.Models.ProficiencyLevel
+import com.example.dnd_sheet.Models.StatType
+import com.example.dnd_sheet.Models.Skill
 import com.example.dnd_sheet.R
 import com.example.dnd_sheet.TextCyan
+import com.example.dnd_sheet.clearFocusOnTap
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 
 @Composable
@@ -54,20 +52,10 @@ fun SkillsScreen(
     onUpdateSaveBonus: (StatType, Int) -> Unit,
     toBack: () -> Unit
 ) {
-    val keyboardController = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
-
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .clickable(
-                interactionSource = remember { MutableInteractionSource() },
-                indication = null,
-                onClick = {
-                    focusManager.clearFocus()
-                    keyboardController?.hide()
-                }
-            )
+            .clearFocusOnTap()
     ) {
         Image(
             painter = painterResource(R.drawable.back_skills_screen),
@@ -130,21 +118,42 @@ fun SkillsScreen(
                 letterSpacing = 2.sp,
             )
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(3),
-                horizontalArrangement = Arrangement.spacedBy(6.dp),
+            Column(
                 verticalArrangement = Arrangement.spacedBy(5.dp),
-                modifier = Modifier.height(155.dp)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                items(StatType.entries) { stat ->
-                    SaveCard(
-                        stat = stat,
-                        character = character,
-                        isProficient = character.proficientSaves.contains(stat),
-                        extraBonus = character.saveExtraBonuses[stat] ?: 0,
-                        onToggle = { onToggleSave(stat) },
-                        onBonusChange = { onUpdateSaveBonus(stat, it) }
-                    )
+                val saves = StatType.entries
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    saves.take(3).forEach { stat ->
+                        SaveCard(
+                            stat = stat,
+                            character = character,
+                            isProficient = character.proficientSaves.contains(stat),
+                            extraBonus = character.saveExtraBonuses[stat] ?: 0,
+                            onToggle = { onToggleSave(stat) },
+                            onBonusChange = { onUpdateSaveBonus(stat, it) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    saves.drop(3).forEach { stat ->
+                        SaveCard(
+                            stat = stat,
+                            character = character,
+                            isProficient = character.proficientSaves.contains(stat),
+                            extraBonus = character.saveExtraBonuses[stat] ?: 0,
+                            onToggle = { onToggleSave(stat) },
+                            onBonusChange = { onUpdateSaveBonus(stat, it) },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
 
@@ -154,22 +163,34 @@ fun SkillsScreen(
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 2.sp,
-                modifier = Modifier.padding(bottom = 0.dp)
+                modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
 
-            LazyVerticalGrid(
-                columns = GridCells.Fixed(2),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalArrangement = Arrangement.spacedBy(6.dp),
-                modifier = Modifier.weight(1f)
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(character.skills.sortedBy { it.name }) { skill ->
-                    SkillCard(
-                        skill = skill,
-                        character = character,
-                        onToggle = { onToggleSkill(skill.name) },
-                        onBonusChange = { onUpdateSkillBonus(skill.name, it) }
-                    )
+                character.skills.chunked(2).forEach { pair ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        pair.forEach { skill ->
+                            SkillCard(
+                                skill = skill,
+                                character = character,
+                                onToggle = { onToggleSkill(skill.name) },
+                                onBonusChange = { onUpdateSkillBonus(skill.name, it) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        if (pair.size == 1) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
         }
@@ -183,7 +204,8 @@ fun SaveCard(
     isProficient: Boolean,
     extraBonus: Int,
     onToggle: () -> Unit,
-    onBonusChange: (Int) -> Unit
+    onBonusChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val statMod = when (stat) {
         StatType.STR -> Math.floorDiv(character.strength - 10, 2)
@@ -198,14 +220,12 @@ fun SaveCard(
     val bonusText = if (totalBonus >= 0) "+$totalBonus" else "$totalBonus"
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = modifier
             .height(70.dp)
             .background(IceGlass, RoundedCornerShape(10.dp))
             .border(1.dp, TextCyan.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
             .padding(6.dp)
     ) {
-        // ВЕРХНЯЯ ЧАСТЬ
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -246,13 +266,20 @@ fun SaveCard(
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            var textFieldValue by remember(extraBonus) {
+            var textFieldValue by remember {
                 mutableStateOf(
                     TextFieldValue(
                         text = if (extraBonus == 0) "" else extraBonus.toString(),
                         selection = TextRange(if (extraBonus == 0) 0 else extraBonus.toString().length)
                     )
                 )
+            }
+
+            LaunchedEffect(extraBonus) {
+                val expected = if (extraBonus == 0) "" else extraBonus.toString()
+                if (textFieldValue.text != expected) {
+                    textFieldValue = TextFieldValue(expected, selection = TextRange(expected.length))
+                }
             }
 
             BasicTextField(
@@ -272,6 +299,7 @@ fun SaveCard(
                     fontSize = 12.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                cursorBrush = SolidColor(TextCyan),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 decorationBox = { innerTextField ->
@@ -294,7 +322,8 @@ fun SkillCard(
     skill: Skill,
     character: CharacterAttributes,
     onToggle: () -> Unit,
-    onBonusChange: (Int) -> Unit
+    onBonusChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
 ) {
     val statMod = when (skill.stat) {
         StatType.STR -> Math.floorDiv(character.strength - 10, 2)
@@ -313,9 +342,8 @@ fun SkillCard(
     val bonusText = if (totalBonus >= 0) "+$totalBonus" else "$totalBonus"
 
     Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(65.dp)
+        modifier = modifier
+            .height(75.dp)
             .background(IceGlass, RoundedCornerShape(10.dp))
             .border(1.dp, TextCyan.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
             .padding(6.dp)
@@ -374,13 +402,20 @@ fun SkillCard(
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            var textFieldValue by remember(skill.extraBonus) {
+            var textFieldValue by remember {
                 mutableStateOf(
                     TextFieldValue(
                         text = if (skill.extraBonus == 0) "" else skill.extraBonus.toString(),
                         selection = TextRange(if (skill.extraBonus == 0) 0 else skill.extraBonus.toString().length)
                     )
                 )
+            }
+
+            LaunchedEffect(skill.extraBonus) {
+                val expected = if (skill.extraBonus == 0) "" else skill.extraBonus.toString()
+                if (textFieldValue.text != expected) {
+                    textFieldValue = TextFieldValue(expected, selection = TextRange(expected.length))
+                }
             }
 
             BasicTextField(
@@ -400,6 +435,7 @@ fun SkillCard(
                     fontSize = 12.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                cursorBrush = SolidColor(TextCyan),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 decorationBox = { innerTextField ->

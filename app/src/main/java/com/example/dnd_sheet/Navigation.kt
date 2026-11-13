@@ -1,18 +1,19 @@
 package com.example.dnd_sheet
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateListOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import com.example.dnd_sheet.Models.SpellSlots
 import com.example.dnd_sheet.Screens.InventoryScreen
 import com.example.dnd_sheet.Screens.MainScreen
 import com.example.dnd_sheet.Screens.CharacterScreen
+import com.example.dnd_sheet.Screens.FeaturesScreen
 import com.example.dnd_sheet.Screens.HistoryScreen
+import com.example.dnd_sheet.Screens.MagikScreen
 import com.example.dnd_sheet.Screens.SkillsScreen
 
 
@@ -31,6 +32,11 @@ data class SkillsScreenRoute(val characterId: Long) : NavKey
 @Serializable
 data class HistoryScreenRoute(val characterId: Long) : NavKey
 
+@Serializable
+data class MagikScreenRoute(val characterId: Long) : NavKey
+
+@Serializable
+data class FeaturesScreenRoute(val characterId: Long) : NavKey
 
 @Composable
 fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
@@ -57,15 +63,20 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         character = character,
                         takeDamage = { characterViewModel.takeDamage(route.characterId, it) },
                         heal = { characterViewModel.heal(route.characterId, it) },
+                        updateDeathSave = { isSuccess, delta -> characterViewModel.updateDeathSave(route.characterId, isSuccess, delta) },
                         updateStat = { stat, value -> characterViewModel.updateStat(route.characterId, stat, value) },
                         updateExp = { newExp -> characterViewModel.updateExp(route.characterId, newExp) },
                         updateClass = { newClass -> characterViewModel.updateClass(route.characterId, newClass) },
                         updateNickname = { newNickname -> characterViewModel.updateNickname(route.characterId, newNickname) },
                         updateAvatar = { uri -> characterViewModel.updateAvatar(route.characterId, uri) },
                         reset = { characterViewModel.reset(route.characterId) },
+                        updateMaxHp = { newMaxHp -> characterViewModel.updateMaxHp(route.characterId, newMaxHp) },
+                        updateHitDice = { delta -> characterViewModel.updateHitDice(route.characterId, delta) },
                         toInventory = { id -> backStack.add(InventoryScreenRoute(id)) },
                         toSkills = { id -> backStack.add(SkillsScreenRoute(id)) },
                         toHistory = { id -> backStack.add(HistoryScreenRoute(id)) },
+                        toMagik = { id -> backStack.add(MagikScreenRoute(id)) },
+                        toFeatures = { id -> backStack.add((FeaturesScreenRoute(id))) },
                         toBack = { backStack.removeLastOrNull() },
                         modifier = modifier
                     )
@@ -115,6 +126,58 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                     )
                 }
             }
+
+            entry <MagikScreenRoute> { route ->
+                val character = characterViewModel.getCharacter(route.characterId)
+                if (character != null){
+                    MagikScreen(
+                        character = character,
+                        onAddSpell = { spell -> characterViewModel.addSpell(route.characterId, spell) },
+                        onUpdateSpell = { spell -> characterViewModel.updateSpell(route.characterId, spell) },
+                        onRemoveSpell = { spellId -> characterViewModel.removeSpell(route.characterId, spellId) },
+                        onTogglePrepared = { spellId -> characterViewModel.toggleSpellPrepared(route.characterId, spellId) },
+                        onUpdateSlot = { level, max -> characterViewModel.updateSpellSlot(route.characterId, level, newMax = max) },
+                        onUseSlot = { level ->
+                            val current = character.spellSlots[level] ?: SpellSlots()
+                            if (current.used < current.max) {
+                                characterViewModel.updateSpellSlot(route.characterId, level, newUsed = current.used + 1)
+                            }
+                        },
+                        onRestoreSlot = { level ->
+                            val current = character.spellSlots[level] ?: SpellSlots()
+                            if (current.used > 0) {
+                                characterViewModel.updateSpellSlot(route.characterId, level, newUsed = current.used - 1)
+                            }
+                        },
+                        onLongRest = { characterViewModel.resetSpellSlots(route.characterId) },
+                        toBack = { backStack.removeLastOrNull() }
+                    )
+                }
+            }
+
+
+            entry <FeaturesScreenRoute> { route ->
+                val character = characterViewModel.getCharacter(route.characterId)
+                if (character != null){
+                    FeaturesScreen(
+                        character = character,
+                        onUpdateProficiencies = { text ->
+                            characterViewModel.updateProficiencies(route.characterId, text)
+                        },
+                        onAddFeature = { feature ->
+                            characterViewModel.addFeature(route.characterId, feature)
+                        },
+                        onUpdateFeature = { feature ->
+                            characterViewModel.updateFeature(route.characterId, feature)
+                        },
+                        onRemoveFeature = { featureId ->
+                            characterViewModel.removeFeature(route.characterId, featureId)
+                        },
+                        toBack = { backStack.removeLastOrNull() },
+                    )
+                }
+            }
+
 
         }
     )

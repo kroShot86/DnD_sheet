@@ -1,4 +1,4 @@
-package com.example.dnd_sheet
+package com.example.dnd_sheet.Models
 
 import kotlinx.serialization.Serializable
 

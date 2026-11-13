@@ -24,23 +24,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.max
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
-import com.example.dnd_sheet.CharState
-import com.example.dnd_sheet.CharacterAttributes
+import com.example.dnd_sheet.Models.CharState
+import com.example.dnd_sheet.Models.CharacterAttributes
 import com.example.dnd_sheet.DragonFire
 import com.example.dnd_sheet.GlassDark
 import com.example.dnd_sheet.GoldGlow
 import com.example.dnd_sheet.LightningBlue
 import com.example.dnd_sheet.R
+import com.example.dnd_sheet.clearFocusOnTap
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 import java.io.File
 
@@ -56,7 +53,7 @@ fun MainScreen(
 
     var characterToDelete by remember { mutableStateOf<CharacterAttributes?>(null) }
 
-    Box {
+    Box (modifier = Modifier.clearFocusOnTap()) {
         Image(
             painter = painterResource(R.drawable.back_main_screen),
             contentDescription = "Фон",

@@ -51,7 +51,15 @@ data class CharacterAttributes(
     val proficientSaves: List<StatType> = emptyList(),
     val saveExtraBonuses: Map<StatType, Int> = emptyMap(),
 
-    val avatarUri: String? = null
+    val avatarUri: String? = null,
+
+    val alignment: String = "",        // Мировоззрение
+    val backstory: String = "",        // Предыстория
+    val ideals: String = "",           // Идеалы
+    val bonds: String = "",            // Привязанности
+    val flaws: String = "",            // Слабости
+    val notes: String = ""             // Записи
+
 ){
 
 

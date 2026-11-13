@@ -69,6 +69,7 @@ fun CharacterScreen(
     reset: () -> Unit,
     toInventory: (Long) -> Unit,
     toSkills: (Long) -> Unit,
+    toHistory: (Long) -> Unit,
     toBack: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -202,7 +203,7 @@ fun CharacterScreen(
                     modifier = Modifier
                         .align(Alignment.BottomStart)
                         .padding(start = 16.dp, bottom = 5.dp)
-                ) { /* TODO: toHistory */ }
+                ) { toHistory(character.id) }
 
 
                 SectionButton(
@@ -606,6 +607,7 @@ fun PreviewCharacterScreen() {
             reset = {},
             toInventory = {},
             toSkills = {},
+            toHistory = {},
             toBack = {},
             modifier = Modifier
         )

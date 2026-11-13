@@ -292,4 +292,41 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
     }
 
 
+    //История
+    fun updateAlignment(id: Long, value: String) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(alignment = value))
+        saveToDisk()
+    }
+
+    fun updateBackstory(id: Long, value: String) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(backstory = value))
+        saveToDisk()
+    }
+
+    fun updateIdeals(id: Long, value: String) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(ideals = value))
+        saveToDisk()
+    }
+
+    fun updateBonds(id: Long, value: String) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(bonds = value))
+        saveToDisk()
+    }
+
+    fun updateFlaws(id: Long, value: String) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(flaws = value))
+        saveToDisk()
+    }
+
+    fun updateNotes(id: Long, value: String) {
+        val character = getCharacter(id) ?: return
+        updateCharacter(id, character.copy(notes = value))
+        saveToDisk()
+    }
+
 }

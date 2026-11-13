@@ -12,6 +12,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import com.example.dnd_sheet.Screens.InventoryScreen
 import com.example.dnd_sheet.Screens.MainScreen
 import com.example.dnd_sheet.Screens.CharacterScreen
+import com.example.dnd_sheet.Screens.HistoryScreen
 import com.example.dnd_sheet.Screens.SkillsScreen
 
 
@@ -26,6 +27,9 @@ data class InventoryScreenRoute(val characterId: Long) : NavKey
 
 @Serializable
 data class SkillsScreenRoute(val characterId: Long) : NavKey
+
+@Serializable
+data class HistoryScreenRoute(val characterId: Long) : NavKey
 
 
 @Composable
@@ -59,8 +63,9 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         updateNickname = { newNickname -> characterViewModel.updateNickname(route.characterId, newNickname) },
                         updateAvatar = { uri -> characterViewModel.updateAvatar(route.characterId, uri) },
                         reset = { characterViewModel.reset(route.characterId) },
-                        toInventory = {id -> backStack.add(InventoryScreenRoute(id)) },
-                        toSkills = {id -> backStack.add(SkillsScreenRoute(id))},
+                        toInventory = { id -> backStack.add(InventoryScreenRoute(id)) },
+                        toSkills = { id -> backStack.add(SkillsScreenRoute(id)) },
+                        toHistory = { id -> backStack.add(HistoryScreenRoute(id)) },
                         toBack = { backStack.removeLastOrNull() },
                         modifier = modifier
                     )
@@ -91,6 +96,22 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         onUpdateSkillBonus = { skillName, bonus -> characterViewModel.updateSkillExtraBonus(route.characterId, skillName, bonus) },
                         onUpdateSaveBonus = { stat, bonus -> characterViewModel.updateSaveExtraBonus(route.characterId, stat, bonus) },
                         toBack = { backStack.removeLastOrNull() }
+                    )
+                }
+            }
+
+            entry <HistoryScreenRoute> { route ->
+                val character = characterViewModel.getCharacter(route.characterId)
+                if (character != null){
+                    HistoryScreen(
+                        character = character,
+                        onUpdateAlignment = { alignment -> characterViewModel.updateAlignment(route.characterId, alignment) },
+                        onUpdateBackstory = { backstory -> characterViewModel.updateBackstory(route.characterId, backstory) },
+                        onUpdateIdeals = { ideals -> characterViewModel.updateIdeals(route.characterId, ideals) },
+                        onUpdateBonds = { bonds -> characterViewModel.updateBonds(route.characterId, bonds) },
+                        onUpdateFlaws = { flaws -> characterViewModel.updateFlaws(route.characterId, flaws) },
+                        onUpdateNotes = { notes -> characterViewModel.updateNotes(route.characterId, notes) },
+                        toBack = { backStack.removeLastOrNull() },
                     )
                 }
             }

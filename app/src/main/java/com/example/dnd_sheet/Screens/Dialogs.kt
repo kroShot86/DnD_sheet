@@ -1,8 +1,12 @@
 package com.example.dnd_sheet.Screens
 
+import android.content.Context
+import android.view.inputmethod.InputMethodManager
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -458,13 +462,17 @@ fun DeleteItemDialog(
 @Composable
 fun SpellDialog(
     spellToEdit: Spell? = null,
+    searchViewModel: SpellSearchViewModel,
     onDismiss: () -> Unit,
     onSave: (Spell) -> Unit
 ) {
-    var name by remember(spellToEdit) { mutableStateOf(spellToEdit?.name ?: "") }
-    var level by remember(spellToEdit) { mutableStateOf(spellToEdit?.level ?: SpellLevel.CANTRIP) }
-    var description by remember(spellToEdit) { mutableStateOf(spellToEdit?.description ?: "") }
+    var currentSpell by remember(spellToEdit) {
+        mutableStateOf(spellToEdit ?: Spell())
+    }
+
     var expanded by remember { mutableStateOf(false) }
+    val uiState by searchViewModel.uiState.collectAsState()
+
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -484,9 +492,13 @@ fun SpellDialog(
                 verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier.verticalScroll(rememberScrollState())
             ) {
+
                 OutlinedTextField(
-                    value = name,
-                    onValueChange = { name = it },
+                    value = currentSpell.name,
+                    onValueChange = { newValue ->
+                        currentSpell = currentSpell.copy(name = newValue)
+                        searchViewModel.onQueryChange(newValue)
+                    },
                     label = { Text("Название") },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -500,6 +512,66 @@ fun SpellDialog(
                     singleLine = true
                 )
 
+                when (val state = uiState) {
+                    is SpellUiState.Loading -> {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    is SpellUiState.Error -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Нет сети", color = Color.Red, fontSize = 12.sp)
+                            TextButton(onClick = { searchViewModel.retry() }) {
+                                Text("Повторить", color = TextCyan)
+                            }
+                        }
+                    }
+                    is SpellUiState.Success -> {
+                        if (state.spells.isNotEmpty()) {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .heightIn(max = 120.dp)
+                                    .background(Color(0xFF101820), RoundedCornerShape(8.dp))
+                            ) {
+                                items(state.spells) { dto ->
+                                    DropdownMenuItem(
+                                        text = { Text(dto.nameRu, color = Color.White) },
+                                        onClick = {
+
+                                            val lvlInt = dto.level.filter { it.isDigit() }.toIntOrNull()
+                                            val parsedLevel = when(lvlInt) {
+                                                0 -> SpellLevel.CANTRIP
+                                                1 -> SpellLevel.LEVEL_1
+                                                2 -> SpellLevel.LEVEL_2
+                                                3 -> SpellLevel.LEVEL_3
+                                                4 -> SpellLevel.LEVEL_4
+                                                5 -> SpellLevel.LEVEL_5
+                                                6 -> SpellLevel.LEVEL_6
+                                                7 -> SpellLevel.LEVEL_7
+                                                8 -> SpellLevel.LEVEL_8
+                                                9 -> SpellLevel.LEVEL_9
+                                                else -> SpellLevel.CANTRIP
+                                            }
+
+                                            currentSpell = currentSpell.copy(
+                                                name = dto.nameRu,
+                                                description = dto.text,
+                                                school = dto.school,
+                                                castTime = dto.time,
+                                                range = dto.distance,
+                                                components = dto.components,
+                                                duration = dto.duration,
+                                                level = parsedLevel
+                                            )
+                                            searchViewModel.onQueryChange("")
+
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    else -> {}
+                }
+
                 Box {
                     OutlinedButton(
                         onClick = { expanded = true },
@@ -508,7 +580,7 @@ fun SpellDialog(
                         border = BorderStroke(1.dp, TextCyan.copy(alpha = 0.5f)),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = TextCyan)
                     ) {
-                        Text(text = "Уровень: ${level.displayName}", modifier = Modifier.weight(1f))
+                        Text(text = "Уровень: ${currentSpell.level.displayName}", modifier = Modifier.weight(1f))
                         Text("▼")
                     }
                     DropdownMenu(
@@ -518,19 +590,108 @@ fun SpellDialog(
                     ) {
                         SpellLevel.entries.forEach { lvl ->
                             DropdownMenuItem(
-                                text = { Text(lvl.displayName, color = if (level == lvl) TextCyan else Color.White) },
+                                text = { Text(lvl.displayName, color = if (currentSpell.level == lvl) TextCyan else Color.White) },
                                 onClick = {
-                                    level = lvl
+                                    currentSpell = currentSpell.copy(level = lvl)
                                     expanded = false
                                 }
                             )
+
                         }
                     }
                 }
 
                 OutlinedTextField(
-                    value = description,
-                    onValueChange = { description = it },
+                    value = currentSpell.school,
+                    onValueChange = { currentSpell = currentSpell.copy(school = it) },
+                    label = { Text("Школа магии") },
+                    placeholder = { Text("напр. Воплощение", color = Color.DarkGray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = TextCyan,
+                        unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                        focusedLabelColor = TextCyan,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = currentSpell.castTime,
+                    onValueChange = { currentSpell = currentSpell.copy(castTime = it) },
+                    label = { Text("Время накладывания") },
+                    placeholder = { Text("напр. 1 действие", color = Color.DarkGray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = TextCyan,
+                        unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                        focusedLabelColor = TextCyan,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+
+                OutlinedTextField(
+                    value = currentSpell.range,
+                    onValueChange = { currentSpell = currentSpell.copy(range = it) },
+                    label = { Text("Дистанция") },
+                    placeholder = { Text("напр. 60 футов", color = Color.DarkGray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = TextCyan,
+                        unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                        focusedLabelColor = TextCyan,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+
+                OutlinedTextField(
+                    value = currentSpell.components,
+                    onValueChange = { currentSpell = currentSpell.copy(components = it) },
+                    label = { Text("Компоненты") },
+                    placeholder = { Text("напр. В, С, М", color = Color.DarkGray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = TextCyan,
+                        unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                        focusedLabelColor = TextCyan,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+
+                OutlinedTextField(
+                    value = currentSpell.duration,
+                    onValueChange = { currentSpell = currentSpell.copy(duration = it) },
+                    label = { Text("Длительность") },
+                    placeholder = { Text("напр. Мгновенная", color = Color.DarkGray) },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = Color.White,
+                        unfocusedTextColor = Color.White,
+                        focusedBorderColor = TextCyan,
+                        unfocusedBorderColor = TextCyan.copy(alpha = 0.3f),
+                        focusedLabelColor = TextCyan,
+                        unfocusedLabelColor = Color.Gray
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
+
+                OutlinedTextField(
+                    value = currentSpell.description,
+                    onValueChange = { currentSpell = currentSpell.copy(description = it) },
                     label = { Text("Описание / Эффект") },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -540,20 +701,17 @@ fun SpellDialog(
                         focusedLabelColor = TextCyan,
                         unfocusedLabelColor = Color.Gray
                     ),
-                    modifier = Modifier.fillMaxWidth().height(120.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
-                    val spell = spellToEdit?.copy(
-                        name = name, level = level, description = description
-                    ) ?: Spell(name = name, level = level, description = description)
-                    onSave(spell)
+                    onSave(currentSpell)
                     onDismiss()
                 },
-                enabled = name.isNotBlank(),
+                enabled = currentSpell.name.isNotBlank(),
                 colors = ButtonDefaults.buttonColors(containerColor = TextCyan, contentColor = Color.Black)
             ) {
                 Text(if (spellToEdit == null) "Добавить" else "Сохранить", fontWeight = FontWeight.Bold)
@@ -637,7 +795,7 @@ fun FeatureDialog(
         shape = RoundedCornerShape(16.dp),
         title = {
             Text(
-                text = if (featureToEdit == null) "🩸 Новое умение" else "✏️ Редактировать",
+                text = if (featureToEdit == null) "\uD83C\uDF00 Новое умение" else "✏️ Редактировать",
                 color = IceBlue,
                 fontWeight = FontWeight.Bold,
                 fontSize = 20.sp

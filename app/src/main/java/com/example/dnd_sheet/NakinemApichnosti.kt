@@ -177,64 +177,6 @@ fun SkillsTargetIcon(modifier: Modifier = Modifier) {
 }
 
 @Composable
-fun HistoryScrollIcon(modifier: Modifier = Modifier) {
-    val infiniteTransition = rememberInfiniteTransition(label = "history_scroll")
-
-    val glowAlpha by infiniteTransition.animateFloat(
-        initialValue = 0.2f,
-        targetValue = 1f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(2000, easing = LinearEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = "glowAlpha"
-    )
-
-    Canvas(modifier = modifier.size(32.dp)) {
-        val center = Offset(size.width / 2, size.height / 2)
-        val radius = size.minDimension / 2
-
-        val scrollWidth = radius * 0.8f
-        val scrollHeight = radius * 1.6f
-
-        drawRoundRect(
-            color = Color.Black.copy(alpha = 0.5f),
-            topLeft = Offset(center.x - scrollWidth/2 + 2.dp.toPx(), center.y - scrollHeight/2 + 2.dp.toPx()),
-            size = androidx.compose.ui.geometry.Size(scrollWidth, scrollHeight),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx(), 4.dp.toPx())
-        )
-
-        drawRoundRect(
-            color = Color(0xFFF5E6D3).copy(alpha = 0.8f),
-            topLeft = Offset(center.x - scrollWidth/2, center.y - scrollHeight/2),
-            size = androidx.compose.ui.geometry.Size(scrollWidth, scrollHeight),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(4.dp.toPx(), 4.dp.toPx())
-        )
-
-        drawRoundRect(
-            color = Color(0xFF4E342E),
-            topLeft = Offset(center.x - scrollWidth/2 - 2.dp.toPx(), center.y - scrollHeight/2 - 2.dp.toPx()),
-            size = androidx.compose.ui.geometry.Size(scrollWidth + 4.dp.toPx(), 4.dp.toPx()),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx(), 2.dp.toPx())
-        )
-        drawRoundRect(
-            color = Color(0xFF4E342E),
-            topLeft = Offset(center.x - scrollWidth/2 - 2.dp.toPx(), center.y + scrollHeight/2 - 2.dp.toPx()),
-            size = androidx.compose.ui.geometry.Size(scrollWidth + 4.dp.toPx(), 4.dp.toPx()),
-            cornerRadius = androidx.compose.ui.geometry.CornerRadius(2.dp.toPx(), 2.dp.toPx())
-        )
-
-        val runeColor = NeonBlue.copy(alpha = glowAlpha)
-        val runeSize = 2.dp.toPx()
-
-        drawLine(runeColor, Offset(center.x - scrollWidth/2 + 4.dp.toPx(), center.y - 8.dp.toPx()), Offset(center.x + scrollWidth/2 - 4.dp.toPx(), center.y - 8.dp.toPx()), strokeWidth = runeSize)
-        drawLine(runeColor, Offset(center.x - scrollWidth/2 + 4.dp.toPx(), center.y - 2.dp.toPx()), Offset(center.x + scrollWidth/2 - 6.dp.toPx(), center.y - 2.dp.toPx()), strokeWidth = runeSize)
-        drawLine(runeColor, Offset(center.x - scrollWidth/2 + 4.dp.toPx(), center.y + 4.dp.toPx()), Offset(center.x + scrollWidth/2 - 4.dp.toPx(), center.y + 4.dp.toPx()), strokeWidth = runeSize)
-        drawLine(runeColor, Offset(center.x - scrollWidth/2 + 4.dp.toPx(), center.y + 10.dp.toPx()), Offset(center.x + scrollWidth/2 - 8.dp.toPx(), center.y + 10.dp.toPx()), strokeWidth = runeSize)
-    }
-}
-
-@Composable
 fun HistoryBookIcon(modifier: Modifier = Modifier) {
     val infiniteTransition = rememberInfiniteTransition(label = "history_book")
 

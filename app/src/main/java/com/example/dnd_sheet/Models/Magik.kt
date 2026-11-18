@@ -23,7 +23,12 @@ data class Spell(
     val name: String = "",
     val level: SpellLevel = SpellLevel.CANTRIP,
     val description: String = "",
-    val isPrepared: Boolean = false
+    val isPrepared: Boolean = false,
+    val school: String = "",
+    val castTime: String = "",
+    val range: String = "",
+    val components: String = "",
+    val duration: String = ""
 )
 
 @Serializable

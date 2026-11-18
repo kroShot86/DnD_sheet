@@ -25,10 +25,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.dnd_sheet.*
 import com.example.dnd_sheet.Models.CharacterAttributes
 import com.example.dnd_sheet.Models.Spell
@@ -36,6 +36,9 @@ import com.example.dnd_sheet.Models.SpellLevel
 import com.example.dnd_sheet.Models.SpellSlots
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 import com.example.dnd_sheet.R
+import androidx.compose.ui.text.style.TextOverflow
+
+
 
 @Composable
 fun MagikScreen(
@@ -50,6 +53,9 @@ fun MagikScreen(
     onLongRest: () -> Unit,
     toBack: () -> Unit
 ) {
+
+    val searchViewModel: SpellSearchViewModel = viewModel()
+
     var showAddDialog by remember { mutableStateOf(false) }
     var spellToEdit by remember { mutableStateOf<Spell?>(null) }
     var spellToDelete by remember { mutableStateOf<Spell?>(null) }
@@ -217,6 +223,7 @@ fun MagikScreen(
     if (showAddDialog) {
         SpellDialog(
             spellToEdit = null,
+            searchViewModel = searchViewModel,
             onDismiss = { showAddDialog = false },
             onSave = { onAddSpell(it) }
         )
@@ -225,6 +232,7 @@ fun MagikScreen(
     if (spellToEdit != null) {
         SpellDialog(
             spellToEdit = spellToEdit,
+            searchViewModel = searchViewModel,
             onDismiss = { spellToEdit = null },
             onSave = { onUpdateSpell(it); spellToEdit = null }
         )
@@ -290,7 +298,6 @@ fun SpellSlotCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
 
-            // Кружки ячеек
             Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                 repeat(totalDisplayed) { index ->
                     val isAvailable = index < available
@@ -319,6 +326,7 @@ fun SpellSlotCard(
     }
 }
 
+
 @Composable
 fun SpellCard(
     spell: Spell,
@@ -326,50 +334,127 @@ fun SpellCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = Color(0xCC0A192F)),
-        border = BorderStroke(1.dp, if (spell.isPrepared) TextCyan else Color.White.copy(alpha = 0.1f))
+        border = BorderStroke(
+            width = 1.dp,
+            color = if (spell.isPrepared) TextCyan else Color.White.copy(alpha = 0.1f)
+        )
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(24.dp)
-                    .border(2.dp, if (spell.isPrepared) TextCyan else Color.Gray, CircleShape)
-                    .background(if (spell.isPrepared) TextCyan else Color.Transparent, CircleShape)
-                    .clickable { onTogglePrepared() }
-            )
+        Column(modifier = Modifier.padding(12.dp)) {
 
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = spell.name,
-                    color = if (spell.isPrepared) TextCyan else Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 16.sp
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .border(2.dp, if (spell.isPrepared) TextCyan else Color.Gray, CircleShape)
+                        .background(if (spell.isPrepared) TextCyan else Color.Transparent, CircleShape)
+                        .clickable { onTogglePrepared() }
                 )
-                if (spell.description.isNotEmpty()) {
+
+                Spacer(modifier = Modifier.width(10.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = spell.description,
-                        color = Color.LightGray,
-                        fontSize = 12.sp,
-                        maxLines = 2,
-                        overflow = TextOverflow.Ellipsis
+                        text = spell.name,
+                        color = if (spell.isPrepared) TextCyan else Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 16.sp
                     )
+                    val schoolText = if (spell.school.isNotBlank()) " • ${spell.school}" else ""
+                    Text(
+                        text = "${spell.level.displayName}$schoolText",
+                        color = GoldAccent,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium
+                    )
+                }
+
+                IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
+                    Text("✏️", fontSize = 16.sp)
+                }
+                IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
+                    Text("🗑️", fontSize = 16.sp)
                 }
             }
 
-            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                Text("✏️", fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SpellStat(icon = "⏱", label = "Время", value = spell.castTime, modifier = Modifier.weight(1f))
+                SpellStat(icon = "🎯", label = "Дистанция", value = spell.range, modifier = Modifier.weight(1f))
             }
-            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                Text("🗑️", fontSize = 16.sp)
+            Spacer(modifier = Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                SpellStat(icon = "🧪", label = "Компоненты", value = spell.components, modifier = Modifier.weight(1f))
+                SpellStat(icon = "⏳", label = "Длительность", value = spell.duration, modifier = Modifier.weight(1f))
             }
+
+            Spacer(modifier = Modifier.height(10.dp))
+            HorizontalDivider(color = Color.White.copy(alpha = 0.1f), thickness = 1.dp)
+            Spacer(modifier = Modifier.height(10.dp))
+
+
+            if (spell.description.isNotEmpty()) {
+                Text(
+                    text = spell.description,
+                    color = Color.LightGray,
+                    fontSize = 12.sp,
+                    lineHeight = 16.sp,
+                    maxLines = if (isExpanded) Int.MAX_VALUE else 3,
+                    overflow = TextOverflow.Ellipsis
+                )
+
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = if (isExpanded) "Скрыть ▲" else "Читать далее ▼",
+                    color = TextCyan,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { isExpanded = !isExpanded }
+                        .padding(vertical = 4.dp),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SpellStat(
+    icon: String,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(icon, fontSize = 14.sp, modifier = Modifier.padding(end = 6.dp))
+        Column {
+            Text(text = label, color = Color.Gray, fontSize = 10.sp)
+            Text(
+                text = value.ifEmpty { "—" },
+                color = Color.White,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium
+            )
         }
     }
 }

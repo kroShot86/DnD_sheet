@@ -381,6 +381,7 @@ fun ItemDialog(
                                                 "weapon" -> Type.WEAPONS
                                                 "armor" -> Type.ARMORS
                                                 "consumable" -> Type.CONSUMABLES
+                                                "magic" -> Type.MAGIC_ITEMS
                                                 else -> Type.OTHER
                                             }
 
@@ -492,7 +493,6 @@ fun ItemDialog(
                     }
                 }
 
-
                 when (newType) {
                     Type.WEAPONS -> {
                         OutlinedTextField(
@@ -578,8 +578,9 @@ fun ItemDialog(
                 onClick = {
                     val weight = newWeight.toFloatOrNull() ?: 0f
                     val count = newCount.toIntOrNull() ?: 1
+
                     if (newName.isNotBlank()) {
-                        val item: Item = if (itemToEdit != null) {
+                        val updatedItem: Item = if (itemToEdit != null) {
                             when (itemToEdit) {
                                 is Weapon -> itemToEdit.copy(
                                     name = newName, weight = weight, count = count, itemType = newType,
@@ -599,14 +600,20 @@ fun ItemDialog(
                                 )
                             }
                         } else {
-                            when (newType) {
-                                Type.WEAPONS -> Weapon(name = newName, weight = weight, count = count, damage = weaponDamage, damageType = weaponDamageType)
-                                Type.ARMORS -> Armor(name = newName, weight = weight, count = count, armorClass = armorClass.toIntOrNull() ?: 10, armorType = armorType)
-                                Type.CONSUMABLES -> Consumable(name = newName, weight = weight, count = count, effect = consumableEffect)
-                                else -> SimpleItem(name = newName, weight = weight, count = count, description = simpleDescription)
-                            }
+                            createNewItem(
+                                type = newType,
+                                name = newName,
+                                weight = weight,
+                                count = count,
+                                weaponDamage = weaponDamage,
+                                weaponDamageType = weaponDamageType,
+                                armorClass = armorClass.toIntOrNull() ?: 10,
+                                armorType = armorType,
+                                consumableEffect = consumableEffect,
+                                simpleDescription = simpleDescription
+                            )
                         }
-                        onSaveItem(item)
+                        onSaveItem(updatedItem)
                         onDismiss()
                     }
                 },
@@ -627,6 +634,47 @@ fun ItemDialog(
     )
 }
 
+
+private fun createNewItem(
+    type: Type,
+    name: String,
+    weight: Float,
+    count: Int,
+    weaponDamage: String,
+    weaponDamageType: String,
+    armorClass: Int,
+    armorType: String,
+    consumableEffect: String,
+    simpleDescription: String
+): Item {
+    return when (type) {
+        Type.WEAPONS -> Weapon(
+            name = name, weight = weight, count = count,
+            itemType = type,
+            damage = weaponDamage, damageType = weaponDamageType
+        )
+        Type.ARMORS -> Armor(
+            name = name, weight = weight, count = count,
+            itemType = type,
+            armorClass = armorClass, armorType = armorType
+        )
+        Type.CONSUMABLES -> Consumable(
+            name = name, weight = weight, count = count,
+            itemType = type,
+            effect = consumableEffect
+        )
+        Type.OTHER, Type.MAGIC_ITEMS -> SimpleItem(
+            name = name, weight = weight, count = count,
+            itemType = type,
+            description = simpleDescription
+        )
+        Type.ALL -> SimpleItem(
+            name = name, weight = weight, count = count,
+            itemType = Type.OTHER,
+            description = simpleDescription
+        )
+    }
+}
 
 
 @Composable

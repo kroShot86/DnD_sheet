@@ -64,7 +64,6 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         takeDamage = { characterViewModel.takeDamage(route.characterId, it) },
                         heal = { characterViewModel.heal(route.characterId, it) },
                         updateDeathSave = { isSuccess, delta -> characterViewModel.updateDeathSave(route.characterId, isSuccess, delta) },
-                        updateStat = { stat, value -> characterViewModel.updateStat(route.characterId, stat, value) },
                         updateExp = { newExp -> characterViewModel.updateExp(route.characterId, newExp) },
                         updateClass = { newClass -> characterViewModel.updateClass(route.characterId, newClass) },
                         updateNickname = { newNickname -> characterViewModel.updateNickname(route.characterId, newNickname) },
@@ -72,6 +71,9 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         reset = { characterViewModel.reset(route.characterId) },
                         updateMaxHp = { newMaxHp -> characterViewModel.updateMaxHp(route.characterId, newMaxHp) },
                         updateHitDice = { delta -> characterViewModel.updateHitDice(route.characterId, delta) },
+                        onAddAttack = { attack -> characterViewModel.addAttack(route.characterId, attack) },
+                        onUpdateAttack = { attack -> characterViewModel.updateAttack(route.characterId, attack) },
+                        onRemoveAttack = { attackId -> characterViewModel.removeAttack(route.characterId, attackId) },
                         toInventory = { id -> backStack.add(InventoryScreenRoute(id)) },
                         toSkills = { id -> backStack.add(SkillsScreenRoute(id)) },
                         toHistory = { id -> backStack.add(HistoryScreenRoute(id)) },
@@ -106,6 +108,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         onToggleSave = { statName -> characterViewModel.toggleSave(route.characterId, statName) },
                         onUpdateSkillBonus = { skillName, bonus -> characterViewModel.updateSkillExtraBonus(route.characterId, skillName, bonus) },
                         onUpdateSaveBonus = { stat, bonus -> characterViewModel.updateSaveExtraBonus(route.characterId, stat, bonus) },
+                        onUpdateStat = { stat, value -> characterViewModel.updateStat(route.characterId, stat, value) },
                         toBack = { backStack.removeLastOrNull() }
                     )
                 }

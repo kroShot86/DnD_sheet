@@ -1,5 +1,7 @@
 package com.example.dnd_sheet.Network
 
+import com.example.dnd_sheet.Models.ItemDto
+import com.example.dnd_sheet.Models.ItemResponse
 import com.example.dnd_sheet.Models.SpellDto
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
@@ -37,5 +39,10 @@ object KtorClient {
 
     suspend fun getAllSpells(): List<SpellDto> {
         return client.get("${BASE_URL}all_spells.json").body()
+    }
+
+    suspend fun getAllItems(): List<ItemDto> {
+        val response: ItemResponse = client.get("${BASE_URL}all_items.json").body()
+        return response.items
     }
 }

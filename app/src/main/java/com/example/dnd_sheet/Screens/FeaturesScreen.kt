@@ -3,6 +3,7 @@ package com.example.dnd_sheet.Screens
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -17,13 +18,16 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.dnd_sheet.DangerRed
 import com.example.dnd_sheet.Models.CharacterAttributes
 import com.example.dnd_sheet.Feature
+import com.example.dnd_sheet.GoldGlow
 import com.example.dnd_sheet.R
 import com.example.dnd_sheet.clearFocusOnTap
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
@@ -45,7 +49,6 @@ fun FeaturesScreen(
     var featureToEdit by remember { mutableStateOf<Feature?>(null) }
     var featureToDelete by remember { mutableStateOf<Feature?>(null) }
 
-    var proficienciesText by remember(character.proficiencies) { mutableStateOf(character.proficiencies) }
 
     Box(
         modifier = Modifier
@@ -54,7 +57,7 @@ fun FeaturesScreen(
     ) {
         Image(
             painter = painterResource(R.drawable.back_features_screen),
-            contentDescription = "Темный охотник",
+            contentDescription = "Умения",
             modifier = Modifier.fillMaxSize(),
             contentScale = ContentScale.Crop
         )
@@ -107,7 +110,6 @@ fun FeaturesScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            // Владения
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -131,7 +133,7 @@ fun FeaturesScreen(
                             .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(8.dp))
                             .padding(8.dp)
                     ) {
-                        if (proficienciesText.isEmpty()) {
+                        if (character.proficiencies.isEmpty()) {
                             Text(
                                 text = "",
                                 color = Color.Gray.copy(alpha = 0.5f),
@@ -140,9 +142,8 @@ fun FeaturesScreen(
                             )
                         }
                         BasicTextField(
-                            value = proficienciesText,
+                            value = character.proficiencies,
                             onValueChange = {
-                                proficienciesText = it
                                 onUpdateProficiencies(it)
                             },
                             textStyle = TextStyle(color = MoonWhite, fontSize = 13.sp, lineHeight = 18.sp),
@@ -255,10 +256,10 @@ fun FeatureCard(
         border = BorderStroke(1.dp, IceBlue.copy(alpha = 0.4f))
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(12.dp),
+            modifier = Modifier.fillMaxWidth().padding(12.dp).height(IntrinsicSize.Min),
             verticalAlignment = Alignment.Top
         ) {
-            Column(modifier = Modifier.weight(1f)) {
+            Column(modifier = Modifier.weight(9f)) {
                 Text(
                     text = feature.name,
                     color = MoonWhite,
@@ -276,11 +277,47 @@ fun FeatureCard(
                 }
             }
 
-            IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                Text("✏️", fontSize = 14.sp)
-            }
-            IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                Text("🗑️", fontSize = 14.sp)
+
+            Column(
+                modifier = Modifier.weight(1f).fillMaxHeight(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable(onClick = onEdit),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "✎",
+                        fontSize = 20.sp,
+                        color = GoldGlow,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(
+                                includeFontPadding = false
+                            )
+                        )
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(30.dp)
+                        .clickable(onClick = onDelete),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "✕",
+                        fontSize = 20.sp,
+                        color = DangerRed,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(
+                                includeFontPadding = false
+                            )
+                        )
+                    )
+                }
             }
         }
     }

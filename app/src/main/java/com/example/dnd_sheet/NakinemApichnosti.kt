@@ -400,6 +400,8 @@ fun FeaturesCrystalIcon(modifier: Modifier = Modifier) {
         val center = Offset(size.width / 2, size.height / 2)
         val radius = size.minDimension / 2
 
+        val safeRotation = rotation % 360f
+
         drawCircle(
             brush = Brush.radialGradient(
                 colors = listOf(
@@ -413,7 +415,7 @@ fun FeaturesCrystalIcon(modifier: Modifier = Modifier) {
             center = center
         )
 
-        rotate(rotation) {
+        rotate(safeRotation) {
             val crystalSize = radius * 0.7f
 
             val crystalPath = Path().apply {
@@ -426,14 +428,14 @@ fun FeaturesCrystalIcon(modifier: Modifier = Modifier) {
 
             drawPath(
                 path = crystalPath,
-                brush = Brush.linearGradient(
+                brush = Brush.radialGradient(
                     colors = listOf(
                         NeonBlue.copy(alpha = glowPulse),
                         Color(0xFF9D00FF).copy(alpha = glowPulse),
                         NeonBlue.copy(alpha = glowPulse * 0.5f)
                     ),
-                    start = Offset(center.x - crystalSize, center.y - crystalSize),
-                    end = Offset(center.x + crystalSize, center.y + crystalSize)
+                    center = center,
+                    radius = crystalSize
                 )
             )
 
@@ -457,9 +459,10 @@ fun FeaturesCrystalIcon(modifier: Modifier = Modifier) {
             )
         }
 
+
         val sparkCount = 3
         repeat(sparkCount) { i ->
-            val angle = (rotation * 1.5f + (i * 120f)) * (Math.PI / 180).toFloat()
+            val angle = (safeRotation * 2f + (i * 120f)) * (Math.PI / 180).toFloat()
             val distance = radius * 0.9f
             val sparkX = center.x + kotlin.math.cos(angle) * distance
             val sparkY = center.y + kotlin.math.sin(angle) * distance

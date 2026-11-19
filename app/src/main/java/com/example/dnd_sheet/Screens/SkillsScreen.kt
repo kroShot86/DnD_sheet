@@ -11,10 +11,14 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
@@ -50,6 +54,7 @@ fun SkillsScreen(
     onToggleSave: (StatType) -> Unit,
     onUpdateSkillBonus: (String, Int) -> Unit,
     onUpdateSaveBonus: (StatType, Int) -> Unit,
+    onUpdateStat: (String, Int) -> Unit,
     toBack: () -> Unit
 ) {
     Box(
@@ -82,6 +87,7 @@ fun SkillsScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(start = 16.dp, top = 45.dp, end = 16.dp, bottom = 50.dp)
+                .verticalScroll(rememberScrollState()),
         ) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -109,6 +115,31 @@ fun SkillsScreen(
             }
 
             Spacer(modifier = Modifier.height(8.dp))
+
+
+            Text(
+                text = "ХАРАКТЕРИСТИКИ",
+                color = TextCyan.copy(alpha = 0.8f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 2.sp,
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                StatInputField("СИЛ", character.strength, { onUpdateStat("СИЛ", it) }, Modifier.weight(1f))
+                StatInputField("ЛВК", character.dexterity, { onUpdateStat("ЛВК", it) }, Modifier.weight(1f))
+                StatInputField("ТЕЛ", character.constitution, { onUpdateStat("ТЕЛ", it) }, Modifier.weight(1f))
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
+                StatInputField("ИНТ", character.intelligence, { onUpdateStat("ИНТ", it) }, Modifier.weight(1f))
+                StatInputField("МДР", character.wisdom, { onUpdateStat("МДР", it) }, Modifier.weight(1f))
+                StatInputField("ХАР", character.charisma, { onUpdateStat("ХАР", it) }, Modifier.weight(1f))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
 
             Text(
                 text = "СПАСБРОСКИ",
@@ -167,10 +198,7 @@ fun SkillsScreen(
             )
 
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .weight(1f)
-                    .verticalScroll(rememberScrollState()),
+                modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 character.skills.chunked(2).forEach { pair ->
@@ -219,12 +247,17 @@ fun SaveCard(
     val totalBonus = statMod + profBonus + extraBonus
     val bonusText = if (totalBonus >= 0) "+$totalBonus" else "$totalBonus"
 
+
+    val borderColor = if (isProficient) GoldAccent else TextCyan.copy(alpha = 0.2f)
+    val bgColor = if (isProficient) Color(0xFF142830) else Color(0xFF0A1117)
+
     Box(
         modifier = modifier
-            .height(70.dp)
-            .background(IceGlass, RoundedCornerShape(10.dp))
-            .border(1.dp, TextCyan.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
-            .padding(6.dp)
+            .height(75.dp)
+            .shadow(4.dp, RoundedCornerShape(10.dp))
+            .background(bgColor, RoundedCornerShape(10.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .padding(8.dp)
     ) {
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -235,14 +268,18 @@ fun SaveCard(
                 Checkbox(
                     checked = isProficient,
                     onCheckedChange = { onToggle() },
-                    colors = CheckboxDefaults.colors(checkedColor = GoldAccent, uncheckedColor = Color.Gray),
+                    colors = CheckboxDefaults.colors(
+                        checkedColor = GoldAccent,
+                        uncheckedColor = Color.Gray,
+                        checkmarkColor = Color.Black
+                    ),
                     modifier = Modifier.size(20.dp)
                 )
                 Spacer(modifier = Modifier.width(4.dp))
                 Text(
                     text = getStatNameShort(stat),
                     color = TextCyan,
-                    fontSize = 12.sp,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.Bold,
                     style = TextStyle(shadow = Shadow(DarkShadow, Offset(1f, 1f), 2f))
                 )
@@ -250,19 +287,19 @@ fun SaveCard(
             Text(
                 text = bonusText,
                 color = GoldAccent,
-                fontWeight = FontWeight.Bold,
-                fontSize = 18.sp,
-                style = TextStyle(shadow = Shadow(DarkShadow, Offset(1f, 1f), 2f))
+                fontWeight = FontWeight.ExtraBold,
+                fontSize = 22.sp,
+                style = TextStyle(shadow = Shadow(GoldAccent.copy(alpha = 0.5f), Offset(0f, 0f), 8f))
             )
         }
+
 
         Row(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth()
-                .height(22.dp)
-                .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
-                .border(1.dp, TextCyan.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                .height(20.dp)
+                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -288,26 +325,22 @@ fun SaveCard(
                     val newText = newValue.text
                     if (newText.length <= 3 && (newText.isEmpty() || newText == "-" || newText.toIntOrNull() != null)) {
                         textFieldValue = newValue.copy(selection = TextRange(newText.length))
-                        val value = if (newText == "-" || newText.isEmpty()) 0 else newText.toIntOrNull() ?: 0
-                        onBonusChange(value)
+                        onBonusChange(if (newText == "-" || newText.isEmpty()) 0 else newText.toIntOrNull() ?: 0)
                     }
                 },
                 textStyle = MaterialTheme.typography.bodySmall.copy(
                     color = TextCyan,
                     textAlign = TextAlign.End,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 cursorBrush = SolidColor(TextCyan),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 decorationBox = { innerTextField ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Доп. бонус:", color = Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Доп. бонус:", color = Color.Gray, fontSize = 8.sp, fontWeight = FontWeight.Bold)
                         Spacer(modifier = Modifier.weight(1f))
                         innerTextField()
                     }
@@ -341,39 +374,49 @@ fun SkillCard(
     val totalBonus = statMod + profBonus + skill.extraBonus
     val bonusText = if (totalBonus >= 0) "+$totalBonus" else "$totalBonus"
 
+    val isTrained = skill.proficiency != ProficiencyLevel.NONE
+    val borderColor = if (isTrained) GoldAccent.copy(alpha = 0.6f) else TextCyan.copy(alpha = 0.2f)
+    val bgColor = if (isTrained) Color(0xFF1A2530) else Color(0xFF0F151C)
+
     Box(
         modifier = modifier
-            .height(75.dp)
-            .background(IceGlass, RoundedCornerShape(10.dp))
-            .border(1.dp, TextCyan.copy(alpha = 0.3f), RoundedCornerShape(10.dp))
-            .padding(6.dp)
+            .height(80.dp)
+            .shadow(4.dp, RoundedCornerShape(10.dp))
+            .background(bgColor, RoundedCornerShape(10.dp))
+            .border(1.dp, borderColor, RoundedCornerShape(10.dp))
+            .padding(8.dp)
     ) {
         Text(
             text = skill.name,
-            color = if (skill.proficiency != ProficiencyLevel.NONE) GoldAccent else TextCyan,
-            fontWeight = if (skill.proficiency != ProficiencyLevel.NONE) FontWeight.Bold else FontWeight.Medium,
+            color = if (isTrained) GoldAccent else TextCyan,
+            fontWeight = FontWeight.Bold,
             fontSize = 15.sp,
             maxLines = 1,
-            style = TextStyle(shadow = Shadow(DarkShadow, Offset(1f, 1f), 2f)),
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .fillMaxWidth(0.7f)
+                .fillMaxWidth(0.75f)
         )
 
         Text(
             text = bonusText,
-            color = GoldAccent,
-            fontWeight = FontWeight.Bold,
-            fontSize = 20.sp,
-            style = TextStyle(shadow = Shadow(DarkShadow, Offset(1f, 1f), 2f)),
+            color = if (isTrained) GoldAccent else Color.White,
+            fontWeight = FontWeight.ExtraBold,
+            fontSize = 22.sp,
+            style = TextStyle(
+                shadow = if (isTrained) Shadow(GoldAccent.copy(alpha = 0.5f), Offset(0f, 0f), 8f) else null
+            ),
             modifier = Modifier.align(Alignment.TopEnd)
         )
 
         Box(
             modifier = Modifier
                 .align(Alignment.BottomStart)
-                .size(23.dp)
-                .border(2.dp, if (skill.proficiency != ProficiencyLevel.NONE) GoldAccent else TextCyan.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                .size(24.dp)
+                .border(
+                    width = 2.dp,
+                    color = if (isTrained) GoldAccent else TextCyan.copy(alpha = 0.5f),
+                    shape = RoundedCornerShape(4.dp)
+                )
                 .background(
                     when (skill.proficiency) {
                         ProficiencyLevel.NONE -> Color.Transparent
@@ -385,20 +428,29 @@ fun SkillCard(
                 .clickable { onToggle() },
             contentAlignment = Alignment.Center
         ) {
-            if (skill.proficiency == ProficiencyLevel.EXPERTISE) {
-                Text("★", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, lineHeight = 14.sp)
-            } else if (skill.proficiency == ProficiencyLevel.PROFICIENT) {
-                Text("✓", color = Color.Black, fontSize = 14.sp, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center, lineHeight = 14.sp)
+            when (skill.proficiency) {
+                ProficiencyLevel.EXPERTISE -> Icon(
+                    imageVector = Icons.Filled.Star,
+                    contentDescription = null,
+                    tint = Color.Black,
+                    modifier = Modifier.size(16.dp)
+                )
+                ProficiencyLevel.PROFICIENT -> Icon(
+                    imageVector = Icons.Filled.Check,
+                    contentDescription = null,
+                    tint = Color.Black,
+                    modifier = Modifier.size(16.dp)
+                )
+                ProficiencyLevel.NONE -> Unit
             }
         }
 
         Row(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
-                .width(110.dp)
-                .height(24.dp)
-                .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
-                .border(1.dp, TextCyan.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                .width(100.dp)
+                .height(22.dp)
+                .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                 .padding(horizontal = 4.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -424,26 +476,22 @@ fun SkillCard(
                     val newText = newValue.text
                     if (newText.length <= 3 && (newText.isEmpty() || newText == "-" || newText.toIntOrNull() != null)) {
                         textFieldValue = newValue.copy(selection = TextRange(newText.length))
-                        val value = if (newText == "-" || newText.isEmpty()) 0 else newText.toIntOrNull() ?: 0
-                        onBonusChange(value)
+                        onBonusChange(if (newText == "-" || newText.isEmpty()) 0 else newText.toIntOrNull() ?: 0)
                     }
                 },
                 textStyle = MaterialTheme.typography.bodySmall.copy(
                     color = TextCyan,
                     textAlign = TextAlign.End,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 12.sp
+                    fontSize = 11.sp
                 ),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 cursorBrush = SolidColor(TextCyan),
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 decorationBox = { innerTextField ->
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text("Доп. бонус:", color = Color.Gray, fontSize = 9.sp, fontWeight = FontWeight.Bold)
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Text("Бонус:", color = Color.Gray, fontSize = 8.sp)
                         Spacer(modifier = Modifier.weight(1f))
                         innerTextField()
                     }
@@ -453,6 +501,7 @@ fun SkillCard(
     }
 }
 
+
 fun getStatNameShort(stat: StatType): String {
     return when (stat) {
         StatType.STR -> "СИЛ"
@@ -461,6 +510,105 @@ fun getStatNameShort(stat: StatType): String {
         StatType.INT -> "ИНТ"
         StatType.WIS -> "МДР"
         StatType.CHA -> "ХАР"
+    }
+}
+
+@Composable
+fun StatInputField(
+    title: String,
+    value: Int,
+    onValueChange: (Int) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var textFieldValue by remember(value) {
+        mutableStateOf(
+            TextFieldValue(
+                text = value.toString(),
+                selection = TextRange(value.toString().length)
+            )
+        )
+    }
+
+    val modifierValue = Math.floorDiv(value - 10, 2)
+    val modifierText = if (modifierValue >= 0) "+$modifierValue" else "$modifierValue"
+
+    Card(
+        modifier = modifier.shadow(8.dp, RoundedCornerShape(12.dp), ambientColor = Color.Black, spotColor = Color.Black),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.Transparent
+        ),
+        border = BorderStroke(1.dp, TextCyan.copy(alpha = 0.4f))
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(
+                            Color(0xFF1E2A38),
+                            Color(0xFF0F151C)
+                        )
+                    )
+                )
+                .padding(vertical = 8.dp, horizontal = 4.dp)
+        ) {
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = TextCyan,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 1.sp
+                )
+
+                Text(
+                    text = modifierText,
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.ExtraBold,
+                    color = GoldAccent,
+                    modifier = Modifier.padding(vertical = 2.dp),
+                    style = TextStyle(
+                        shadow = Shadow(color = GoldAccent.copy(alpha = 0.5f), blurRadius = 10f)
+                    )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 8.dp)
+                        .background(Color.Black.copy(alpha = 0.6f), RoundedCornerShape(6.dp))
+                        .border(1.dp, TextCyan.copy(alpha = 0.2f), RoundedCornerShape(6.dp))
+                        .padding(vertical = 6.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    BasicTextField(
+                        value = textFieldValue,
+                        onValueChange = { newValue ->
+                            if (newValue.text.all { it.isDigit() } && newValue.text.length <= 3) {
+                                textFieldValue = newValue.copy(selection = TextRange(newValue.text.length))
+                                if (newValue.text.isNotEmpty()) {
+                                    onValueChange(newValue.text.toIntOrNull() ?: 0)
+                                }
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        textStyle = MaterialTheme.typography.bodyLarge.copy(
+                            fontWeight = FontWeight.Bold,
+                            textAlign = TextAlign.Center,
+                            color = Color.White,
+                            fontSize = 18.sp
+                        ),
+                        cursorBrush = SolidColor(TextCyan),
+                        modifier = Modifier.fillMaxWidth(),
+                        singleLine = true
+                    )
+                }
+            }
+        }
     }
 }
 
@@ -474,6 +622,7 @@ fun PreviewSkillsScreen() {
             onToggleSave = {},
             onUpdateSkillBonus = { _, _ -> },
             onUpdateSaveBonus = { _, _ -> },
+            onUpdateStat = {_, _ ->},
             toBack = {}
         )
     }

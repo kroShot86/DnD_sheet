@@ -20,14 +20,22 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.dnd_sheet.Models.CharacterAttributes
 import com.example.dnd_sheet.GoldText
-import com.example.dnd_sheet.Models.Items
+import com.example.dnd_sheet.Models.Item
 import com.example.dnd_sheet.Models.Type
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import com.example.dnd_sheet.DangerRed
 import com.example.dnd_sheet.Feature
+import com.example.dnd_sheet.Models.Armor
+import com.example.dnd_sheet.Models.Attack
+import com.example.dnd_sheet.Models.Consumable
+import com.example.dnd_sheet.Models.SimpleItem
 import com.example.dnd_sheet.Models.Spell
 import com.example.dnd_sheet.Models.SpellLevel
+import com.example.dnd_sheet.Models.Weapon
 import com.example.dnd_sheet.TextCyan
 import com.example.dnd_sheet.clearFocusOnTap
 
@@ -116,7 +124,6 @@ fun NumberInputDialog(
                     fontWeight = FontWeight.Bold,
                     fontSize = 22.sp,
                 )
-                // Кнопка закрытия (крестик)
                 IconButton(onClick = onDismiss) {
                     Text("✖", color = Color.Gray, fontSize = 20.sp)
                 }
@@ -150,7 +157,7 @@ fun NumberInputDialog(
 
                     Spacer(modifier = Modifier.width(8.dp))
 
-                    // Кнопка Backspace
+
                     Button(
                         onClick = {
                             if (amount.isNotEmpty()) {
@@ -234,17 +241,78 @@ fun NumberInputDialog(
 }
 
 
+@Composable
+fun DeleteAttackDialog(
+    attackToDelete: Attack,
+    onDismiss: () -> Unit,
+    onConfirm: (Long) -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFF0D1117),
+        shape = RoundedCornerShape(16.dp),
+        title = {
+            Text(
+                text = "Удалить атаку?",
+                color = DangerRed,
+                fontWeight = FontWeight.Bold,
+                fontSize = 20.sp
+            )
+        },
+        text = {
+            Text(
+                text = "Вы уверены, что хотите удалить «${attackToDelete.name}»? Это действие нельзя отменить.",
+                color = Color.LightGray,
+                fontSize = 14.sp
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = {
+                    onConfirm(attackToDelete.id)
+                    onDismiss()
+                },
+                colors = ButtonDefaults.buttonColors(containerColor = DangerRed, contentColor = Color.White)
+            ) {
+                Text("Удалить", fontWeight = FontWeight.Bold)
+            }
+        },
+        dismissButton = {
+            OutlinedButton(
+                onClick = onDismiss,
+                border = BorderStroke(1.dp, Color.Gray)
+            ) {
+                Text("Отмена", color = Color.LightGray)
+            }
+        }
+    )
+}
+
+
 //InventoryScreen диалоги
 @Composable
 fun ItemDialog(
-    itemToEdit: Items? = null,
+    itemToEdit: Item? = null,
+    itemSearchViewModel: ItemSearchViewModel,
     onDismiss: () -> Unit,
-    onSaveItem: (Items) -> Unit
+    onSaveItem: (Item) -> Unit
 ) {
-    var newName by remember(itemToEdit) { mutableStateOf(itemToEdit?.name ?: "") }
-    var newWeight by remember(itemToEdit) { mutableStateOf(itemToEdit?.weight?.toString() ?: "") }
-    var newCount by remember(itemToEdit) { mutableStateOf(itemToEdit?.count?.toString() ?: "1") }
-    var newType by remember(itemToEdit) { mutableStateOf(itemToEdit?.itemType ?: Type.WEAPONS) }
+    var newName by remember { mutableStateOf(itemToEdit?.name ?: "") }
+    var newWeight by remember { mutableStateOf(itemToEdit?.weight?.toString() ?: "") }
+    var newCount by remember { mutableStateOf(itemToEdit?.count?.toString() ?: "1") }
+    var newType by remember { mutableStateOf(itemToEdit?.itemType ?: Type.WEAPONS) }
+
+    // Специфичные поля для разных типов
+    var weaponDamage by remember { mutableStateOf((itemToEdit as? Weapon)?.damage ?: "") }
+    var weaponDamageType by remember { mutableStateOf((itemToEdit as? Weapon)?.damageType ?: "") }
+    var armorClass by remember { mutableStateOf((itemToEdit as? Armor)?.armorClass?.toString() ?: "") }
+    var armorType by remember { mutableStateOf((itemToEdit as? Armor)?.armorType ?: "") }
+    var consumableEffect by remember { mutableStateOf((itemToEdit as? Consumable)?.effect ?: "") }
+    var simpleDescription by remember { mutableStateOf((itemToEdit as? SimpleItem)?.description ?: "") }
+
+    val uiState by itemSearchViewModel.uiState.collectAsState()
+    val focusManager = LocalFocusManager.current
+    val keyboardController = LocalSoftwareKeyboardController.current
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -260,10 +328,16 @@ fun ItemDialog(
         },
         modifier = Modifier.clearFocusOnTap(),
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.verticalScroll(rememberScrollState())
+            ) {
                 OutlinedTextField(
                     value = newName,
-                    onValueChange = { newName = it },
+                    onValueChange = {
+                        newName = it
+                        itemSearchViewModel.onQueryChange(it)
+                    },
                     label = { Text("Название") },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -274,8 +348,60 @@ fun ItemDialog(
                         unfocusedLabelColor = Color.Gray
                     ),
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
                 )
+
+                when (val state = uiState) {
+                    is ItemUiState.Loading -> {
+                        LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                    }
+                    is ItemUiState.Error -> {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("Нет сети", color = Color.Red, fontSize = 12.sp)
+                            TextButton(onClick = { itemSearchViewModel.retry() }) {
+                                Text("Повторить", color = GoldText)
+                            }
+                        }
+                    }
+                    is ItemUiState.Success -> {
+                        if (state.items.isNotEmpty()) {
+                            LazyColumn(
+                                modifier = Modifier
+                                    .heightIn(max = 120.dp)
+                                    .background(Color(0xFF2A1B1B), RoundedCornerShape(8.dp))
+                            ) {
+                                items(state.items) { dto ->
+                                    DropdownMenuItem(
+                                        text = { Text(dto.name, color = Color.White) },
+                                        onClick = {
+                                            newName = dto.name
+                                            newWeight = dto.weight.toString()
+                                            newCount = dto.count.toString()
+
+                                            newType = when (dto.itemType) {
+                                                "weapon" -> Type.WEAPONS
+                                                "armor" -> Type.ARMORS
+                                                "consumable" -> Type.CONSUMABLES
+                                                else -> Type.OTHER
+                                            }
+
+                                            weaponDamage = dto.damage ?: ""
+                                            weaponDamageType = dto.damageType ?: ""
+                                            armorClass = dto.armorClass?.toString() ?: ""
+                                            armorType = dto.armorType ?: ""
+                                            consumableEffect = dto.effect ?: ""
+                                            simpleDescription = dto.description ?: ""
+
+                                            itemSearchViewModel.onQueryChange("")
+                                            focusManager.clearFocus()
+                                            keyboardController?.hide()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    else -> {}
+                }
 
                 OutlinedTextField(
                     value = newWeight,
@@ -312,7 +438,6 @@ fun ItemDialog(
                 Text("Тип:", color = Color(0xFFFFD700), fontSize = 14.sp)
                 var expanded by remember { mutableStateOf(false) }
 
-
                 fun getTypeName(type: Type): String {
                     return when (type) {
                         Type.WEAPONS -> "Оружие"
@@ -338,7 +463,6 @@ fun ItemDialog(
                         )
                         Text("▼")
                     }
-
 
                     DropdownMenu(
                         expanded = expanded,
@@ -367,6 +491,86 @@ fun ItemDialog(
                         }
                     }
                 }
+
+
+                when (newType) {
+                    Type.WEAPONS -> {
+                        OutlinedTextField(
+                            value = weaponDamage,
+                            onValueChange = { weaponDamage = it },
+                            label = { Text("Урон (напр. 1к8)") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFFFFD700).copy(alpha = 0.3f),
+                                focusedLabelColor = Color(0xFFFFD700), unfocusedLabelColor = Color.Gray
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                        OutlinedTextField(
+                            value = weaponDamageType,
+                            onValueChange = { weaponDamageType = it },
+                            label = { Text("Тип урона (напр. Рубящий)") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFFFFD700).copy(alpha = 0.3f),
+                                focusedLabelColor = Color(0xFFFFD700), unfocusedLabelColor = Color.Gray
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Type.ARMORS -> {
+                        OutlinedTextField(
+                            value = armorClass,
+                            onValueChange = { armorClass = it.filter { char -> char.isDigit() } },
+                            label = { Text("Класс брони (КД)") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFFFFD700).copy(alpha = 0.3f),
+                                focusedLabelColor = Color(0xFFFFD700), unfocusedLabelColor = Color.Gray
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                            singleLine = true
+                        )
+                        OutlinedTextField(
+                            value = armorType,
+                            onValueChange = { armorType = it },
+                            label = { Text("Тип брони (Легкая, Средняя и т.д.)") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFFFFD700).copy(alpha = 0.3f),
+                                focusedLabelColor = Color(0xFFFFD700), unfocusedLabelColor = Color.Gray
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Type.CONSUMABLES -> {
+                        OutlinedTextField(
+                            value = consumableEffect,
+                            onValueChange = { consumableEffect = it },
+                            label = { Text("Эффект") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFFFFD700).copy(alpha = 0.3f),
+                                focusedLabelColor = Color(0xFFFFD700), unfocusedLabelColor = Color.Gray
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    Type.OTHER, Type.MAGIC_ITEMS -> {
+                        OutlinedTextField(
+                            value = simpleDescription,
+                            onValueChange = { simpleDescription = it },
+                            label = { Text("Описание") },
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedTextColor = Color.White, unfocusedTextColor = Color.White,
+                                focusedBorderColor = Color(0xFFFFD700), unfocusedBorderColor = Color(0xFFFFD700).copy(alpha = 0.3f),
+                                focusedLabelColor = Color(0xFFFFD700), unfocusedLabelColor = Color.Gray
+                            ),
+                            modifier = Modifier.fillMaxWidth(),
+                        )
+                    }
+                    else -> {}
+                }
             }
         },
         confirmButton = {
@@ -375,12 +579,33 @@ fun ItemDialog(
                     val weight = newWeight.toFloatOrNull() ?: 0f
                     val count = newCount.toIntOrNull() ?: 1
                     if (newName.isNotBlank()) {
-                        val item = itemToEdit?.copy(
-                            name = newName,
-                            weight = weight,
-                            count = count,
-                            itemType = newType
-                        ) ?: Items(name = newName, weight = weight, count = count, itemType = newType)
+                        val item: Item = if (itemToEdit != null) {
+                            when (itemToEdit) {
+                                is Weapon -> itemToEdit.copy(
+                                    name = newName, weight = weight, count = count, itemType = newType,
+                                    damage = weaponDamage, damageType = weaponDamageType
+                                )
+                                is Armor -> itemToEdit.copy(
+                                    name = newName, weight = weight, count = count, itemType = newType,
+                                    armorClass = armorClass.toIntOrNull() ?: 10, armorType = armorType
+                                )
+                                is Consumable -> itemToEdit.copy(
+                                    name = newName, weight = weight, count = count, itemType = newType,
+                                    effect = consumableEffect
+                                )
+                                is SimpleItem -> itemToEdit.copy(
+                                    name = newName, weight = weight, count = count, itemType = newType,
+                                    description = simpleDescription
+                                )
+                            }
+                        } else {
+                            when (newType) {
+                                Type.WEAPONS -> Weapon(name = newName, weight = weight, count = count, damage = weaponDamage, damageType = weaponDamageType)
+                                Type.ARMORS -> Armor(name = newName, weight = weight, count = count, armorClass = armorClass.toIntOrNull() ?: 10, armorType = armorType)
+                                Type.CONSUMABLES -> Consumable(name = newName, weight = weight, count = count, effect = consumableEffect)
+                                else -> SimpleItem(name = newName, weight = weight, count = count, description = simpleDescription)
+                            }
+                        }
                         onSaveItem(item)
                         onDismiss()
                     }
@@ -394,7 +619,7 @@ fun ItemDialog(
         dismissButton = {
             OutlinedButton(
                 onClick = onDismiss,
-                border = androidx.compose.foundation.BorderStroke(1.dp, Color.Gray)
+                border = BorderStroke(1.dp, Color.Gray)
             ) {
                 Text("Отмена", color = Color.LightGray)
             }
@@ -406,7 +631,7 @@ fun ItemDialog(
 
 @Composable
 fun DeleteItemDialog(
-    itemToDelete: Items,
+    itemToDelete: Item,
     onDismiss: () -> Unit,
     onConfirm: (Long) -> Unit
 ) {
@@ -863,20 +1088,3 @@ fun FeatureDialog(
     )
 }
 
-
-@Preview(showBackground = true, name = "Добавить предмет")
-@Composable
-fun PreviewAddItemDialog() {
-    DnD_sheetTheme {
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color(0xFF1A1A24))
-        ) {
-            ItemDialog(
-                onDismiss = {},
-                onSaveItem = {}
-            )
-        }
-    }
-}

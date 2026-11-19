@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.dnd_sheet.Models.CharacterAttributes
+import io.ktor.utils.io.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.json.Json
@@ -28,6 +29,8 @@ class CharacterRepository(private val context: Context) {
         val jsonString = context.dataStore.data.map { it[CHARACTERS_KEY] ?: "[]" }.first()
         return try {
             json.decodeFromString(jsonString)
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
             emptyList()
         }

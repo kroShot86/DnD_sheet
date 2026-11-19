@@ -20,3 +20,7 @@ val DarkShadow = Color(0xCC000000)
 val BookGlass = Color(0xCC1A1005)
 val GoldInk = Color(0xFFFFD700)
 val WarmText = Color(0xFFF5E6D3)
+val unfocusedBg = Color.White.copy(alpha = 0.05f)
+val focusedBg = NeonBlue.copy(alpha = 0.1f)
+val unfocusedBorder = Color.Transparent
+val focusedBorder = NeonBlue.copy(alpha = 0.5f)

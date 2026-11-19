@@ -15,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.rememberScrollState
@@ -25,6 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -40,6 +43,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -67,6 +71,11 @@ import com.example.dnd_sheet.clearFocusOnTap
 import com.example.dnd_sheet.deleteImageFile
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.TextRange
+import com.example.dnd_sheet.Models.Attack
+import com.example.dnd_sheet.focusedBg
+import com.example.dnd_sheet.focusedBorder
+import com.example.dnd_sheet.unfocusedBg
+import com.example.dnd_sheet.unfocusedBorder
 
 
 @Composable
@@ -75,7 +84,6 @@ fun CharacterScreen(
     takeDamage: (Int) -> Unit,
     heal: (Int) -> Unit,
     updateDeathSave: (Boolean, Int) -> Unit,
-    updateStat: (String, Int) -> Unit,
     updateExp: (Int) -> Unit,
     updateClass: (String) -> Unit,
     updateNickname: (String) -> Unit,
@@ -83,6 +91,9 @@ fun CharacterScreen(
     reset: () -> Unit,
     updateMaxHp: (Int) -> Unit,
     updateHitDice: (Int) -> Unit,
+    onAddAttack: (Attack) -> Unit,
+    onUpdateAttack: (Attack) -> Unit,
+    onRemoveAttack: (Long) -> Unit,
     toInventory: (Long) -> Unit,
     toSkills: (Long) -> Unit,
     toHistory: (Long) -> Unit,
@@ -105,6 +116,8 @@ fun CharacterScreen(
 
     var showDamageDialog by remember { mutableStateOf(false) }
     var showHealDialog by remember { mutableStateOf(false) }
+
+    var attackToDelete by remember { mutableStateOf<Attack?>(null) }
 
     val cropLauncher = rememberLauncherForActivityResult(
         contract = CropImageContract()
@@ -474,30 +487,84 @@ fun CharacterScreen(
                 }
             }
 
-            Text(
-                "Характеристики",
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Bold,
-                color = NeonBlue,
-                modifier = Modifier.align(Alignment.Start)
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+            var editingAttackId by remember { mutableStateOf<Long?>(null) }
+            var showNewAttackRow by remember { mutableStateOf(false) }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                StatInputField("СИЛ", character.strength, { updateStat("СИЛ", it) }, Modifier.weight(1f))
-                StatInputField("ЛВК", character.dexterity, { updateStat("ЛВК", it) }, Modifier.weight(1f))
-                StatInputField("ТЕЛ", character.constitution, { updateStat("ТЕЛ", it) }, Modifier.weight(1f))
-            }
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.fillMaxWidth()) {
-                StatInputField("ИНТ", character.intelligence, { updateStat("ИНТ", it) }, Modifier.weight(1f))
-                StatInputField("МДР", character.wisdom, { updateStat("МДР", it) }, Modifier.weight(1f))
-                StatInputField("ХАР", character.charisma, { updateStat("ХАР", it) }, Modifier.weight(1f))
-            }
+            Text("⚔️ Атаки и заклинания", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = NeonBlue)
 
+            Card(
+                modifier = Modifier.fillMaxWidth().padding(top = 8.dp, bottom = 16.dp),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(containerColor = DarkGlass),
+                border = BorderStroke(1.dp, GoldGlow.copy(alpha = 0.3f))
+            ) {
+                Column(modifier = Modifier.padding(8.dp)) {
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .background(Color.Black.copy(alpha = 0.3f))
+                            .padding(horizontal = 8.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("Название", color = GoldGlow, fontSize = 11.sp, modifier = Modifier.weight(1.5f), fontWeight = FontWeight.Bold)
+                        Text("Атака", color = GoldGlow, fontSize = 11.sp, modifier = Modifier.weight(0.8f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                        Text("Урон", color = GoldGlow, fontSize = 11.sp, modifier = Modifier.weight(1.2f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                        Text("Тип", color = GoldGlow, fontSize = 11.sp, modifier = Modifier.weight(1f), textAlign = TextAlign.Center, fontWeight = FontWeight.Bold)
+                        Spacer(modifier = Modifier.width(28.dp))
+                    }
+
+
+                    character.attacks.forEach { attack ->
+                        AttackRow(
+                            attack = attack,
+                            isEditing = editingAttackId == attack.id,
+                            onEditClick = { editingAttackId = attack.id },
+                            onSaveClick = { updated ->
+                                onUpdateAttack(updated)
+                                editingAttackId = null
+                            },
+                            onDeleteClick = { attackToDelete = attack }
+                        )
+                    }
+
+
+                    if (showNewAttackRow) {
+                        var newAttack by remember { mutableStateOf(Attack()) }
+
+
+                        AttackRow(
+                            attack = newAttack,
+                            isEditing = true,
+                            onEditClick = {},
+                            onSaveClick = { savedAttack ->
+                                if (savedAttack.name.isNotBlank()) {
+                                    onAddAttack(savedAttack)
+                                }
+                                showNewAttackRow = false
+                            },
+                            onDeleteClick = { showNewAttackRow = false }
+                        )
+
+
+                        TextButton(onClick = { showNewAttackRow = false }, modifier = Modifier.align(Alignment.End)) {
+                            Text("Отмена", color = Color.Gray, fontSize = 12.sp)
+                        }
+                    }
+
+
+                    if (!showNewAttackRow) {
+                        TextButton(
+                            onClick = { showNewAttackRow = true },
+                            modifier = Modifier.fillMaxWidth().padding(top = 8.dp)
+                        ) {
+                            Text("➕ Добавить атаку", color = NeonBlue, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(16.dp))
-
 
             Card(
                 modifier = Modifier.fillMaxWidth().padding(bottom = 16.dp),
@@ -542,7 +609,6 @@ fun CharacterScreen(
                             value = maxHpTextFieldValue,
                             onValueChange = { newValue ->
                                 if (newValue.text.length <= 3) {
-                                    // Принудительно ставим курсор в самый конец строки при каждом изменении
                                     maxHpTextFieldValue = newValue.copy(
                                         selection = TextRange(newValue.text.length)
                                     )
@@ -700,85 +766,13 @@ fun CharacterScreen(
             onConfirm = { amount -> heal(amount) }
         )
     }
-}
 
-
-@Composable
-fun StatInputField(
-    title: String,
-    value: Int,
-    onValueChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
-    var textFieldValue by remember(value) {
-        mutableStateOf(
-            TextFieldValue(
-                text = value.toString(),
-                selection = TextRange(value.toString().length)
-            )
+    if (attackToDelete != null) {
+        DeleteAttackDialog(
+            attackToDelete = attackToDelete!!,
+            onDismiss = { attackToDelete = null },
+            onConfirm = { attackId -> onRemoveAttack(attackId) }
         )
-    }
-
-    val modifierValue = Math.floorDiv(value - 10, 2)
-    val modifierText = if (modifierValue >= 0) "+$modifierValue" else "$modifierValue"
-
-    Card(
-        modifier = modifier,
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C252E)),
-        border = BorderStroke(1.dp, Color.White.copy(alpha = 0.1f))
-    ) {
-        Column(
-            modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp, horizontal = 4.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = title,
-                style = MaterialTheme.typography.labelSmall,
-                color = NeonBlue,
-                fontWeight = FontWeight.Bold
-            )
-
-            Text(
-                text = modifierText,
-                fontSize = 22.sp,
-                fontWeight = FontWeight.Bold,
-                color = GoldGlow,
-                modifier = Modifier.padding(vertical = 2.dp)
-            )
-
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 8.dp)
-                    .background(Color.Black.copy(alpha = 0.4f), RoundedCornerShape(4.dp))
-                    .padding(vertical = 4.dp),
-                contentAlignment = Alignment.Center
-            ) {
-                BasicTextField(
-                    value = textFieldValue,
-                    onValueChange = { newValue ->
-                        if (newValue.text.all { it.isDigit() } && newValue.text.length <= 3) {
-                            textFieldValue = newValue.copy(selection = TextRange(newValue.text.length))
-
-                            if (newValue.text.isNotEmpty()) {
-                                val newInt = newValue.text.toIntOrNull() ?: 0
-                                onValueChange(newInt)
-                            }
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    textStyle = MaterialTheme.typography.bodyLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        color = Color.White
-                    ),
-                    cursorBrush = SolidColor(NeonBlue),
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
-                )
-            }
-        }
     }
 }
 
@@ -878,6 +872,216 @@ fun SectionButton(
 }
 
 
+@Composable
+fun AttackRow(
+    attack: Attack,
+    isEditing: Boolean,
+    onEditClick: () -> Unit,
+    onSaveClick: (Attack) -> Unit,
+    onDeleteClick: () -> Unit
+) {
+    var editedName by remember { mutableStateOf(attack.name) }
+    var editedBonus by remember { mutableStateOf(attack.attackBonus) }
+    var editedDamage by remember { mutableStateOf(attack.damage) }
+    var editedType by remember { mutableStateOf(attack.damageType) }
+
+    LaunchedEffect(isEditing) {
+        if (isEditing) {
+            editedName = attack.name
+            editedBonus = attack.attackBonus
+            editedDamage = attack.damage
+            editedType = attack.damageType
+        }
+    }
+
+    val editTextStyle = TextStyle(
+        fontSize = 12.sp,
+        color = Color.White,
+        textAlign = TextAlign.Center,
+        fontWeight = FontWeight.Bold
+    )
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Min)
+            .padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (isEditing) {
+
+            var isNameFocused by remember { mutableStateOf(false) }
+            BasicTextField(
+                value = editedName,
+                onValueChange = { editedName = it },
+                modifier = Modifier
+                    .weight(1.5f)
+                    .background(if (isNameFocused) focusedBg else unfocusedBg, RoundedCornerShape(4.dp))
+                    .border(1.dp, if (isNameFocused) focusedBorder else unfocusedBorder, RoundedCornerShape(4.dp))
+                    .padding(8.dp)
+                    .onFocusChanged { isNameFocused = it.isFocused },
+                textStyle = editTextStyle.copy(textAlign = TextAlign.Start),
+                singleLine = true,
+                cursorBrush = SolidColor(NeonBlue),
+                decorationBox = { inner ->
+                    if (editedName.isEmpty()) {
+                        Text("Название", fontSize = 11.sp, color = Color.Gray, modifier = Modifier.fillMaxWidth())
+                    }
+                    inner()
+                }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+
+            var isBonusFocused by remember { mutableStateOf(false) }
+            BasicTextField(
+                value = editedBonus,
+                onValueChange = { editedBonus = it },
+                modifier = Modifier
+                    .weight(0.8f)
+                    .background(if (isBonusFocused) focusedBg else unfocusedBg, RoundedCornerShape(4.dp))
+                    .border(1.dp, if (isBonusFocused) focusedBorder else unfocusedBorder, RoundedCornerShape(4.dp))
+                    .padding(8.dp)
+                    .onFocusChanged { isBonusFocused = it.isFocused },
+                textStyle = editTextStyle.copy(color = NeonBlue),
+                singleLine = true,
+                cursorBrush = SolidColor(NeonBlue),
+                decorationBox = { inner ->
+                    if (editedBonus.isEmpty()) {
+                        Text("+0", fontSize = 11.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    }
+                    inner()
+                }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+
+
+            var isDamageFocused by remember { mutableStateOf(false) }
+            BasicTextField(
+                value = editedDamage,
+                onValueChange = { editedDamage = it },
+                modifier = Modifier
+                    .weight(1.2f)
+                    .background(if (isDamageFocused) focusedBg else unfocusedBg, RoundedCornerShape(4.dp))
+                    .border(1.dp, if (isDamageFocused) focusedBorder else unfocusedBorder, RoundedCornerShape(4.dp))
+                    .padding(8.dp)
+                    .onFocusChanged { isDamageFocused = it.isFocused },
+                textStyle = editTextStyle.copy(color = DangerRed),
+                singleLine = true,
+                cursorBrush = SolidColor(NeonBlue),
+                decorationBox = { inner ->
+                    if (editedDamage.isEmpty()) {
+                        Text("Урон", fontSize = 11.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    }
+                    inner()
+                }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+
+
+            var isTypeFocused by remember { mutableStateOf(false) }
+            BasicTextField(
+                value = editedType,
+                onValueChange = { editedType = it },
+                modifier = Modifier
+                    .weight(1f)
+                    .background(if (isTypeFocused) focusedBg else unfocusedBg, RoundedCornerShape(4.dp))
+                    .border(1.dp, if (isTypeFocused) focusedBorder else unfocusedBorder, RoundedCornerShape(4.dp))
+                    .padding(8.dp)
+                    .onFocusChanged { isTypeFocused = it.isFocused },
+                textStyle = editTextStyle.copy(color = Color.LightGray),
+                singleLine = true,
+                cursorBrush = SolidColor(NeonBlue),
+                decorationBox = { inner ->
+                    if (editedType.isEmpty()) {
+                        Text("Тип", fontSize = 11.sp, color = Color.Gray, textAlign = TextAlign.Center, modifier = Modifier.fillMaxWidth())
+                    }
+                    inner()
+                }
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+
+
+            Box(
+                modifier = Modifier
+                    .size(32.dp)
+                    .clip(CircleShape)
+                    .background(HealGreen.copy(alpha = 0.2f))
+                    .clickable {
+                        onSaveClick(
+                            attack.copy(
+                                name = editedName,
+                                attackBonus = editedBonus,
+                                damage = editedDamage,
+                                damageType = editedType
+                            )
+                        )
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text("✓", color = HealGreen, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+            }
+
+        } else {
+            Box(modifier = Modifier.weight(1.5f)) {
+                Text(attack.name, color = Color.White, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.horizontalScroll(rememberScrollState()))
+            }
+            Box(modifier = Modifier.weight(0.8f), contentAlignment = Alignment.Center) {
+                Text(attack.attackBonus, color = NeonBlue, fontSize = 14.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.horizontalScroll(rememberScrollState()))
+            }
+            Box(modifier = Modifier.weight(1.2f), contentAlignment = Alignment.Center) {
+                Text(attack.damage, color = DangerRed, fontSize = 13.sp, fontWeight = FontWeight.Bold, maxLines = 1, modifier = Modifier.horizontalScroll(rememberScrollState()))
+            }
+            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                Text(attack.damageType, color = Color.Gray, fontSize = 12.sp, maxLines = 1, modifier = Modifier.horizontalScroll(rememberScrollState()))
+            }
+
+            Column(
+                modifier = Modifier.width(28.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable(onClick = onEditClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "✎",
+                        fontSize = 14.sp,
+                        color = GoldGlow,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(
+                                includeFontPadding = false
+                            )
+                        )
+                    )
+                }
+
+                Box(
+                    modifier = Modifier
+                        .size(24.dp)
+                        .clickable(onClick = onDeleteClick),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "✕",
+                        fontSize = 14.sp,
+                        color = DangerRed,
+                        style = TextStyle(
+                            platformStyle = PlatformTextStyle(
+                                includeFontPadding = false
+                            )
+                        )
+                    )
+                }
+            }
+        }
+    }
+    Divider(color = Color.White.copy(alpha = 0.05f), thickness = 1.dp)
+}
+
+
 @Preview(showBackground = true, name = "Лист персонажа")
 @Composable
 fun PreviewCharacterScreen() {
@@ -887,7 +1091,6 @@ fun PreviewCharacterScreen() {
             takeDamage = {},
             heal = {},
             updateDeathSave = {_,_ ->},
-            updateStat = { _, _ -> },
             updateExp = {},
             updateClass = {},
             updateNickname = { _ -> },
@@ -895,6 +1098,9 @@ fun PreviewCharacterScreen() {
             reset = {},
             updateMaxHp = {},
             updateHitDice = {},
+            onAddAttack = {},
+            onUpdateAttack = {},
+            onRemoveAttack = {},
             toInventory = {},
             toSkills = {},
             toHistory = {},

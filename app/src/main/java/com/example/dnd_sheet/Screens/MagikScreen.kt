@@ -378,10 +378,10 @@ fun SpellCard(
                 }
 
                 IconButton(onClick = onEdit, modifier = Modifier.size(32.dp)) {
-                    Text("✏️", fontSize = 16.sp)
+                    Text("✎", fontSize = 16.sp, color = GoldGlow)
                 }
                 IconButton(onClick = onDelete, modifier = Modifier.size(32.dp)) {
-                    Text("🗑️", fontSize = 16.sp)
+                    Text("✕", fontSize = 16.sp, color = DangerRed)
                 }
             }
 

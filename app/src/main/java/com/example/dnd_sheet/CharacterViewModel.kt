@@ -3,14 +3,20 @@ package com.example.dnd_sheet
 import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.room.util.copy
+import com.example.dnd_sheet.Models.Armor
+import com.example.dnd_sheet.Models.Attack
 import com.example.dnd_sheet.Models.CharState
 import com.example.dnd_sheet.Models.CharacterAttributes
-import com.example.dnd_sheet.Models.Items
+import com.example.dnd_sheet.Models.Consumable
+import com.example.dnd_sheet.Models.Item
 import com.example.dnd_sheet.Models.ProficiencyLevel
+import com.example.dnd_sheet.Models.SimpleItem
 import com.example.dnd_sheet.Models.Spell
 import com.example.dnd_sheet.Models.SpellLevel
 import com.example.dnd_sheet.Models.SpellSlots
 import com.example.dnd_sheet.Models.StatType
+import com.example.dnd_sheet.Models.Weapon
 import kotlinx.coroutines.launch
 
 
@@ -20,9 +26,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
     private val _characters = mutableStateListOf<CharacterAttributes>()
 
 
-
-    //private var nextId = 1L
-
     init {
         viewModelScope.launch {
             val saved = repository.loadCharacters()
@@ -30,32 +33,6 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
                 _characters.addAll(saved)
             }
         }
-
-        /*
-        // Добавление стартовых персонажей
-            _characters.add(CharacterAttributes(id = nextId++, nickname = "Арагорн", currentHp = 30))
-            _characters.add(CharacterAttributes(id = nextId++, nickname = "Леголас", currentHp = 12))
-            _characters.add(CharacterAttributes(id = nextId++, nickname = "Гэндальф", currentHp = 0, currentState = CharState.UNCONSCIOUS))
-            _characters.add(CharacterAttributes(id = nextId++, nickname = "Боромир", currentHp = 0, currentState = CharState.DEAD))
-
-
-            repeat(10) {
-                _characters.add(
-                    CharacterAttributes(
-                        id = nextId++,
-                        nickname = "Инкогнито",
-                        characterClass = listOf("Воин", "Чародей", "Колдун", "Волшебник", "Варвар", "Паладин", "Изобретатель", "Следопыт", "Бард", "Плут", "Жрец").random(),
-                        strength = (8..18).random(),
-                        dexterity = (8..18).random(),
-                        constitution = (8..18).random(),
-                        intelligence = (8..18).random(),
-                        wisdom = (8..18).random(),
-                        charisma = (8..18).random(),
-                        level = (1..20).random()
-                    )
-                )
-            }
-         */
     }
 
     private fun saveToDisk() {
@@ -244,10 +221,28 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         updateCharacter(characterId, character.copy(currentCountDice = newCurrentCountDice))
     }
 
+
+
+    fun addAttack(characterId: Long, attack: Attack) {
+        val character = getCharacter(characterId) ?: return
+        updateCharacter(characterId, character.copy(attacks = character.attacks + attack))
+    }
+
+    fun updateAttack(characterId: Long, attack: Attack) {
+        val character = getCharacter(characterId) ?: return
+        val newAttacks = character.attacks.map { if (it.id == attack.id) attack else it }
+        updateCharacter(characterId, character.copy(attacks = newAttacks))
+    }
+
+    fun removeAttack(characterId: Long, attackId: Long) {
+        val character = getCharacter(characterId) ?: return
+        updateCharacter(characterId, character.copy(attacks = character.attacks.filterNot { it.id == attackId }))
+    }
+
     ////////////////////////////////////////////////////////////////////////////////Инвентарь
 
 
-    fun addItem(id: Long, item: Items){
+    fun addItem(id: Long, item: Item){
         val character = getCharacter(id) ?: return
         val newInventory = character.inventory + item
         updateCharacter(id, character.copy(inventory = newInventory))
@@ -266,7 +261,14 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         val updatedInventory = character.inventory.map { item ->
             if (item.id == itemId) {
                 val newCount = (item.count + delta).coerceAtLeast(0)
-                item.copy(count = newCount)
+
+
+                when (item) {
+                    is Weapon -> item.copy(count = newCount)
+                    is Armor -> item.copy(count = newCount)
+                    is Consumable -> item.copy(count = newCount)
+                    is SimpleItem -> item.copy(count = newCount)
+                }
             } else {
                 item
             }
@@ -275,7 +277,7 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         updateCharacter(characterId, character.copy(inventory = updatedInventory))
     }
 
-    fun updateItem(characterId: Long, updatedItem: Items) {
+    fun updateItem(characterId: Long, updatedItem: Item) {
         val character = getCharacter(characterId) ?: return
         val newInventory = character.inventory.map { item ->
             if (item.id == updatedItem.id) updatedItem else item

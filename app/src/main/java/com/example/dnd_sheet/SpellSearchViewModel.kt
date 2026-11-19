@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dnd_sheet.Models.SpellDto
 import com.example.dnd_sheet.Network.KtorClient
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,6 +52,8 @@ class SpellSearchViewModel : ViewModel() {
             try {
                 allSpells = KtorClient.getAllSpells()
                 isLoaded = true
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 _uiState.value = SpellUiState.Error("Ошибка сети: ${e.message}")
                 return

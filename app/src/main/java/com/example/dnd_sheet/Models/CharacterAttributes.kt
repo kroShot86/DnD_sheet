@@ -29,11 +29,13 @@ data class CharacterAttributes(
     val deathSavesSuccesses: Int = 0,
     val deathSavesFailures: Int = 0,
 
+    val attacks: List<Attack> = emptyList(),
+
     val currentCountDice: Int = level,
 
     val currentState: CharState = CharState.HEALTHY,
 
-    val inventory: List<Items> = emptyList(),
+    val inventory: List<Item> = emptyList(),
 
     val skills: List<Skill> = listOf(
         Skill("Акробатика", StatType.DEX),

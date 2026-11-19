@@ -4,10 +4,12 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -22,24 +24,23 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.dnd_sheet.CharState
-import com.example.dnd_sheet.CharacterAttributes
+import coil.compose.AsyncImage
+import com.example.dnd_sheet.Models.CharState
+import com.example.dnd_sheet.Models.CharacterAttributes
+import com.example.dnd_sheet.DragonFire
+import com.example.dnd_sheet.GlassDark
+import com.example.dnd_sheet.GoldGlow
+import com.example.dnd_sheet.LightningBlue
 import com.example.dnd_sheet.R
+import com.example.dnd_sheet.clearFocusOnTap
 import com.example.dnd_sheet.ui.theme.DnD_sheetTheme
+import java.io.File
 
-
-val GlassDark = Color(0xCC1A1A24)
-val DragonFire = Color(0xFFFF5252)
-val LightningBlue = Color(0xFF00E5FF)
-val GoldGlow = Color(0xFFFFD700)
 
 @Composable
 fun MainScreen(
@@ -52,7 +53,7 @@ fun MainScreen(
 
     var characterToDelete by remember { mutableStateOf<CharacterAttributes?>(null) }
 
-    Box {
+    Box (modifier = Modifier.clearFocusOnTap()) {
         Image(
             painter = painterResource(R.drawable.back_main_screen),
             contentDescription = "Фон",
@@ -82,8 +83,8 @@ fun MainScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Персонажи",
-                color = Color.White,
+                text = "|| Персонажи ||",
+                color = GoldGlow,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 4.sp,
@@ -124,53 +125,12 @@ fun MainScreen(
             }
         }
     }
+
     if (characterToDelete != null) {
-        AlertDialog(
-            onDismissRequest = { characterToDelete = null },
-            containerColor = Color(0xE6151010),
-            shape = RoundedCornerShape(20.dp),
-            title = {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(text = "⚠️", fontSize = 24.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Удалить героя?",
-                        color = Color.White,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 22.sp
-                    )
-                }
-            },
-            text = {
-                Text(
-                    text = "Вы уверены, что хотите навсегда удалить ${characterToDelete?.nickname}? Это действие нельзя отменить.",
-                    color = Color.LightGray,
-                    fontSize = 16.sp
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = {
-                        characterToDelete?.let { onRemoveCharacter(it.id) }
-                        characterToDelete = null
-                    },
-                    colors = ButtonDefaults.buttonColors(containerColor = DragonFire),
-                    shape = RoundedCornerShape(12.dp),
-                    modifier = Modifier.padding(horizontal = 4.dp)
-                ) {
-                    Text("Удалить", fontWeight = FontWeight.Bold, color = Color.White)
-                }
-            },
-            dismissButton = {
-                OutlinedButton(
-                    onClick = { characterToDelete = null },
-                    border = BorderStroke(1.dp, Color.Gray),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.LightGray)
-                ) {
-                    Text("Отмена")
-                }
-            }
+        DeleteCharacterDialog(
+            characterToDelete = characterToDelete!!,
+            onDismiss = { characterToDelete = null },
+            onConfirm = { id -> onRemoveCharacter(id) }
         )
     }
 }
@@ -192,11 +152,8 @@ fun CharacterCard(
             .fillMaxWidth()
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(16.dp),
-
-        colors = CardDefaults.cardColors(
-            containerColor = GlassDark
-        ),
-        border = androidx.compose.foundation.BorderStroke(
+        colors = CardDefaults.cardColors(containerColor = GlassDark),
+        border = BorderStroke(
             width = 1.dp,
             color = stateColor.copy(alpha = 0.5f)
         ),
@@ -207,7 +164,6 @@ fun CharacterCard(
                 .fillMaxWidth()
                 .height(IntrinsicSize.Min),
             verticalAlignment = Alignment.CenterVertically
-
         ) {
             Box(
                 modifier = Modifier
@@ -218,74 +174,112 @@ fun CharacterCard(
 
             Box(
                 modifier = Modifier
-                    .padding(16.dp)
+                    .padding(10.dp)
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.5f)),
                 contentAlignment = Alignment.Center
             ) {
-                val emoji = when (character.currentState) {
-                    CharState.HEALTHY -> "🧙‍♂️"
-                    CharState.UNCONSCIOUS -> "😵"
-                    CharState.DEAD -> "💀"
+                if (character.avatarUri != null) {
+                    AsyncImage(
+                        model = File(character.avatarUri),
+                        contentDescription = "Аватар",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    val avatarEmoji = when (character.currentState) {
+                        CharState.HEALTHY -> "🧙‍♂️"
+                        CharState.UNCONSCIOUS -> "😵"
+                        CharState.DEAD -> "💀"
+                    }
+                    Text(text = avatarEmoji, fontSize = 28.sp)
                 }
-                Text(text = emoji, fontSize = 28.sp)
             }
 
             Column(
                 modifier = Modifier
-                    .weight(4f)
-                    .padding(vertical = 16.dp),
+                    .weight(1f)
+                    .padding(top = 16.dp, bottom = 16.dp, end = 8.dp),
                 verticalArrangement = Arrangement.Center
             ) {
-                Text(
-                    text = character.nickname.ifEmpty { "Инкогнито" },
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    Text(
+                        text = character.nickname.ifEmpty { "Инкогнито" },
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = GoldGlow,
+                        maxLines = 1
+                    )
+                }
                 Spacer(modifier = Modifier.height(4.dp))
 
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = character.characterClass.ifEmpty { "(без класса)" },
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color(0xFFC4A96E),
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(top = 16.dp, bottom = 16.dp, end = 8.dp),
+                verticalArrangement = Arrangement.Center
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Text("Уровень: ", fontSize = 14.sp, color = Color(0xFFA68A4D))
+                    Row(
+                        modifier = Modifier
+                            .weight(1f)
+                            .horizontalScroll(rememberScrollState())
+                    ) {
+                        Text(
+                            text = character.level.toString(),
+                            fontSize = 14.sp,
+                            color = Color(0xFFFFD54F),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = "❤️ ${character.currentHp}/${character.maxHp}",
+                        text = "\uD83D\uDC9B ${character.currentHp}/${character.maxHp}",
                         fontSize = 14.sp,
-                        color = Color.LightGray
+                        color = Color(0xFFFFD54F),
+                        maxLines = 1
                     )
                 }
             }
-
-
-            Column(
-                modifier = Modifier
-                    .weight(4f)
-                    .padding(vertical = 16.dp),
-                verticalArrangement = Arrangement.Center
-            ) {
-                Text(
-                    text = "Уровень: ${character.level}",
-                    fontSize = 15.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(3f)
-                )
-
-                Text(
-                    text = "Класс: ${character.characterClass}",
-                    fontSize = 15.sp,
-                    color = Color.White,
-                    textAlign = TextAlign.Center,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.weight(3f)
-                )
-            }
-
-
 
             IconButton(
                 onClick = onRemove,

@@ -70,6 +70,14 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         saveToDisk()
     }
 
+    fun moveCharacter(fromIndex: Int, toIndex: Int) {
+        if (fromIndex in _characters.indices && toIndex in _characters.indices) {
+            val item = _characters.removeAt(fromIndex)
+            _characters.add(toIndex, item)
+            saveToDisk()
+        }
+    }
+
     fun takeDamage(id: Long, amount: Int){
         val character = getCharacter(id) ?: return
 
@@ -284,6 +292,18 @@ class CharacterViewModel(private val repository: CharacterRepository) : ViewMode
         }
         updateCharacter(characterId, character.copy(inventory = newInventory))
 
+    }
+
+    fun moveItem(characterId: Long, fromIndex: Int, toIndex: Int) {
+        val character = getCharacter(characterId) ?: return
+        val inventory = character.inventory.toMutableList()
+
+        if (fromIndex in inventory.indices && toIndex in inventory.indices) {
+            val item = inventory.removeAt(fromIndex)
+            inventory.add(toIndex, item)
+            updateCharacter(characterId, character.copy(inventory = inventory))
+            saveToDisk()
+        }
     }
 
 

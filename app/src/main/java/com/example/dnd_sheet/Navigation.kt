@@ -52,7 +52,8 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                     characters = characterViewModel.getListCharacters(),
                     onAddCharacter = { characterViewModel.addCharacter() },
                     onCharacterClick = { id -> backStack.add(CharacterScreenRoute(id)) },
-                    onRemoveCharacter = { id -> characterViewModel.removeCharacter(id) }
+                    onRemoveCharacter = { id -> characterViewModel.removeCharacter(id) },
+                    onMoveCharacter = { from, to -> characterViewModel.moveCharacter(from, to) }
                 )
             }
 
@@ -94,6 +95,7 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
                         updateItem = { item -> characterViewModel.updateItem(route.characterId, item) },
                         removeItem = { itemId -> characterViewModel.removeItem(route.characterId, itemId) },
                         changeCount = { itemId, delta -> characterViewModel.changeItemCount(route.characterId, itemId, delta) },
+                        moveItem = { from, to -> characterViewModel.moveItem(route.characterId, from, to) },
                         toBack = { backStack.removeLastOrNull() }
                     )
                 }

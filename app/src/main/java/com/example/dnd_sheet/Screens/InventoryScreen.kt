@@ -6,6 +6,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
@@ -57,6 +58,7 @@ fun InventoryScreen(
     updateItem: (item: Item) -> Unit,
     removeItem: (itemId: Long) -> Unit,
     changeCount: (itemId: Long, delta: Int) -> Unit,
+    moveItem: (fromIndex: Int, toIndex: Int) -> Unit,
     toBack: () -> Unit,
 ) {
 
@@ -183,13 +185,13 @@ fun InventoryScreen(
             val filteredInventory = when {
                 selectedFilter == Type.ALL -> character.inventory
                 else -> character.inventory.filter { it.itemType == selectedFilter }
-            }.sortedBy { it.name }
+            }
 
             LazyColumn(
                 verticalArrangement = Arrangement.spacedBy(6.dp),
                 modifier = Modifier.weight(1f)
             ) {
-                items(filteredInventory, key = { it.id }) { item ->
+                itemsIndexed(filteredInventory, key = { _, item -> item.id }) { index, item ->
                     Card(
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(10.dp),
@@ -202,13 +204,44 @@ fun InventoryScreen(
                                 .padding(horizontal = 10.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            val icon = when(item) {
-                                is Weapon -> "⚔️"
-                                is Armor -> "🛡️"
-                                is Consumable -> "🧪"
-                                else -> "📦"
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center,
+                                modifier = Modifier.padding(start = 5.dp, top = 2.dp, end = 10.dp, bottom = 2.dp)
+                            ) {
+                                val canMoveUp = index > 0
+                                val canMoveDown = index < filteredInventory.size - 1
+
+                                IconButton(
+                                    onClick = {
+                                        val realFromIndex = character.inventory.indexOfFirst { it.id == item.id }
+                                        val prevItemId = filteredInventory[index - 1].id
+                                        val realToIndex = character.inventory.indexOfFirst { it.id == prevItemId }
+                                        if (realFromIndex != -1 && realToIndex != -1) {
+                                            moveItem(realFromIndex, realToIndex)
+                                        }
+                                    },
+                                    enabled = canMoveUp,
+                                    modifier = Modifier.size(24.dp).padding(bottom = 2.dp)
+                                ) {
+                                    Text("▲", fontSize = 14.sp, color = if (canMoveUp) Color.Green else Color.DarkGray)
+                                }
+
+                                IconButton(
+                                    onClick = {
+                                        val realFromIndex = character.inventory.indexOfFirst { it.id == item.id }
+                                        val nextItemId = filteredInventory[index + 1].id
+                                        val realToIndex = character.inventory.indexOfFirst { it.id == nextItemId }
+                                        if (realFromIndex != -1 && realToIndex != -1) {
+                                            moveItem(realFromIndex, realToIndex)
+                                        }
+                                    },
+                                    enabled = canMoveDown,
+                                    modifier = Modifier.size(24.dp).padding(top = 1.dp)
+                                ) {
+                                    Text("▼", fontSize = 14.sp, color = if (canMoveDown) Color.Green else Color.DarkGray)
+                                }
                             }
-                            Text(icon, fontSize = 22.sp, modifier = Modifier.padding(end = 10.dp))
 
                             Column(
                                 modifier = Modifier.weight(1f),
@@ -391,6 +424,7 @@ fun PreviewInventoryScreen() {
             updateItem = {},
             removeItem = {},
             changeCount = { _, _ -> },
+            moveItem = {_, _ ->},
             toBack = {}
         )
     }

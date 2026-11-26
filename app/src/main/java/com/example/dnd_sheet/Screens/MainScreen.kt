@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -48,6 +49,7 @@ fun MainScreen(
     onCharacterClick: (Long) -> Unit,
     onAddCharacter: () -> Unit,
     onRemoveCharacter: (Long) -> Unit,
+    onMoveCharacter: (Int, Int) -> Unit
 
 ) {
 
@@ -115,11 +117,19 @@ fun MainScreen(
                 modifier = Modifier.fillMaxSize(),
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                items(characters, key = { it.id }) { character ->
+                itemsIndexed(characters, key = { _, char -> char.id }) { index, character ->
                     CharacterCard(
                         character = character,
                         onClick = { onCharacterClick(character.id) },
-                        onRemove = { characterToDelete = character }
+                        onRemove = { characterToDelete = character },
+                        onMoveUp = {
+                            if (index > 0) onMoveCharacter(index, index - 1)
+                        },
+                        onMoveDown = {
+                            if (index < characters.size - 1) onMoveCharacter(index, index + 1)
+                        },
+                        canMoveUp = index > 0,
+                        canMoveDown = index < characters.size - 1
                     )
                 }
             }
@@ -139,7 +149,11 @@ fun MainScreen(
 fun CharacterCard(
     character: CharacterAttributes,
     onClick: () -> Unit,
-    onRemove: () -> Unit
+    onRemove: () -> Unit,
+    onMoveUp: () -> Unit,
+    onMoveDown: () -> Unit,
+    canMoveUp: Boolean,
+    canMoveDown: Boolean
 ) {
     val stateColor = when (character.currentState) {
         CharState.HEALTHY -> LightningBlue
@@ -172,9 +186,42 @@ fun CharacterCard(
                     .background(stateColor)
             )
 
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.padding(start = 2.dp)
+            ) {
+                IconButton(
+                    onClick = onMoveUp,
+                    enabled = canMoveUp,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Text(
+                        text = "▲",
+                        fontSize = 16.sp,
+                        color = if (canMoveUp) Color.Green else Color.DarkGray
+                    )
+                }
+
+                IconButton(
+                    onClick = onMoveDown,
+                    enabled = canMoveDown,
+                    modifier = Modifier.size(28.dp)
+                ) {
+                    Text(
+                        text = "▼",
+                        fontSize = 16.sp,
+                        color = if (canMoveDown) Color.Green else Color.DarkGray
+                    )
+                }
+            }
+
+
+
+
             Box(
                 modifier = Modifier
-                    .padding(10.dp)
+                    .padding(start = 2.dp, top = 10.dp, end = 10.dp, bottom = 10.dp)
                     .size(56.dp)
                     .clip(CircleShape)
                     .background(Color.Black.copy(alpha = 0.5f)),
@@ -210,7 +257,7 @@ fun CharacterCard(
                 ) {
                     Text(
                         text = character.nickname.ifEmpty { "Инкогнито" },
-                        fontSize = 18.sp,
+                        fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = GoldGlow,
                         maxLines = 1
@@ -229,7 +276,7 @@ fun CharacterCard(
                     ) {
                         Text(
                             text = character.characterClass.ifEmpty { "(без класса)" },
-                            fontSize = 14.sp,
+                            fontSize = 13.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color(0xFFC4A96E),
                             maxLines = 1
@@ -240,15 +287,15 @@ fun CharacterCard(
 
             Column(
                 modifier = Modifier
-                    .weight(1f)
-                    .padding(top = 16.dp, bottom = 16.dp, end = 8.dp),
+                    .weight(0.9f)
+                    .padding(top = 16.dp, bottom = 16.dp, end = 5.dp),
                 verticalArrangement = Arrangement.Center
             ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Уровень: ", fontSize = 14.sp, color = Color(0xFFA68A4D))
+                    Text("Уровень: ", fontSize = 12.sp, color = Color(0xFFA68A4D))
                     Row(
                         modifier = Modifier
                             .weight(1f)
@@ -256,7 +303,7 @@ fun CharacterCard(
                     ) {
                         Text(
                             text = character.level.toString(),
-                            fontSize = 14.sp,
+                            fontSize = 12.sp,
                             color = Color(0xFFFFD54F),
                             fontWeight = FontWeight.Bold,
                             modifier = Modifier.weight(1f)
@@ -274,7 +321,7 @@ fun CharacterCard(
                 ) {
                     Text(
                         text = "\uD83D\uDC9B ${character.currentHp}/${character.maxHp}",
-                        fontSize = 14.sp,
+                        fontSize = 12.sp,
                         color = Color(0xFFFFD54F),
                         maxLines = 1
                     )
@@ -283,7 +330,6 @@ fun CharacterCard(
 
             IconButton(
                 onClick = onRemove,
-                modifier = Modifier.padding(end = 8.dp)
             ) {
                 Text(text = "❌", fontSize = 20.sp)
             }
@@ -304,7 +350,8 @@ fun PreviewMainScreen() {
             ),
             onAddCharacter = {},
             onCharacterClick = {},
-            onRemoveCharacter = {}
+            onRemoveCharacter = {},
+            onMoveCharacter = {_,_ ->}
         )
     }
 }

@@ -29,6 +29,8 @@ import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import com.example.dnd_sheet.DangerRed
 import com.example.dnd_sheet.Feature
+import com.example.dnd_sheet.Ktor.ItemSearchViewModel
+import com.example.dnd_sheet.Ktor.ItemUiState
 import com.example.dnd_sheet.Models.Armor
 import com.example.dnd_sheet.Models.Attack
 import com.example.dnd_sheet.Models.Consumable

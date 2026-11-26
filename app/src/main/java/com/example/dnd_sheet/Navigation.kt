@@ -7,6 +7,7 @@ import androidx.navigation3.ui.NavDisplay
 import kotlinx.serialization.Serializable
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import com.example.dnd_sheet.Models.SpellSlots
 import com.example.dnd_sheet.Screens.InventoryScreen
 import com.example.dnd_sheet.Screens.MainScreen
@@ -15,6 +16,7 @@ import com.example.dnd_sheet.Screens.FeaturesScreen
 import com.example.dnd_sheet.Screens.HistoryScreen
 import com.example.dnd_sheet.Screens.MagikScreen
 import com.example.dnd_sheet.Screens.SkillsScreen
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 
 
 @Serializable
@@ -45,6 +47,10 @@ fun AppNavigation(characterViewModel: CharacterViewModel, modifier: Modifier) {
     NavDisplay(
         backStack = backStack,
         onBack = { backStack.removeLastOrNull() },
+        entryDecorators = listOf(
+            rememberSaveableStateHolderNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator()
+        ),
         entryProvider = entryProvider {
 
             entry<MainScreenRoute> {

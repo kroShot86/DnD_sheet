@@ -1,16 +1,17 @@
-package com.example.dnd_sheet.Screens
+package com.example.dnd_sheet.Ktor
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.dnd_sheet.Models.ItemDto
-import com.example.dnd_sheet.Network.KtorClient
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
-import kotlin.coroutines.cancellation.CancellationException
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.flow.collectLatest
 
 sealed interface ItemUiState {
     data object Idle : ItemUiState
@@ -23,6 +24,8 @@ class ItemSearchViewModel : ViewModel() {
     private var allItems: List<ItemDto> = emptyList()
     private var isLoaded = false
 
+    private var searchJob: Job? = null
+
     private val _searchQuery = MutableStateFlow("")
     private val _uiState = MutableStateFlow<ItemUiState>(ItemUiState.Idle)
     val uiState: StateFlow<ItemUiState> = _uiState.asStateFlow()
@@ -32,11 +35,11 @@ class ItemSearchViewModel : ViewModel() {
             _searchQuery
                 .debounce(300L)
                 .distinctUntilChanged()
-                .collect { query ->
+                .collectLatest { query ->
                     if (query.isBlank()) {
                         _uiState.value = ItemUiState.Idle
                     } else {
-                        searchItems(query)
+                        triggerSearch(query)
                     }
                 }
         }
@@ -46,11 +49,18 @@ class ItemSearchViewModel : ViewModel() {
         _searchQuery.value = query
     }
 
+    private fun triggerSearch(query: String) {
+        searchJob?.cancel()
+        searchJob = viewModelScope.launch {
+            searchItems(query)
+        }
+    }
+
     private suspend fun searchItems(query: String) {
         if (!isLoaded) {
             _uiState.value = ItemUiState.Loading
             try {
-                allItems = KtorClient.getAllItems()
+                allItems = ItemApi.getAllItems()
                 isLoaded = true
             } catch (e: CancellationException) {
                 throw e
@@ -69,6 +79,6 @@ class ItemSearchViewModel : ViewModel() {
 
     fun retry() {
         isLoaded = false
-        viewModelScope.launch { searchItems(_searchQuery.value) }
+        triggerSearch(_searchQuery.value)
     }
 }
